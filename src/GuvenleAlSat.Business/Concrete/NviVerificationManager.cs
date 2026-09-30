@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 using System.Xml.Linq;
 using GuvenleAlSat.Business.Abstract;
 using GuvenleAlSat.Core.Utilities.Results;
@@ -13,6 +12,20 @@ public class NviVerificationManager : INviVerificationService
     public NviVerificationManager(HttpClient httpClient)
     {
         _httpClient = httpClient;
+    }
+
+    private static string ToTurkishUpper(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        return text.Trim()
+            .Replace("i", "İ")
+            .Replace("ı", "I")
+            .Replace("ç", "Ç")
+            .Replace("ğ", "Ğ")
+            .Replace("ö", "Ö")
+            .Replace("ş", "Ş")
+            .Replace("ü", "Ü")
+            .ToUpperInvariant();
     }
 
     public async Task<IDataResult<bool>> VerifyAsync(string nationalId, string firstName, string lastName, int birthYear)
@@ -39,13 +52,12 @@ public class NviVerificationManager : INviVerificationService
         if (d[10] != eleventhDigit)
             return new ErrorDataResult<bool>(false, "T.C. Kimlik Numarası algoritma doğrulamasından geçemedi.");
 
-        if (birthYear < 1920 || birthYear > DateTime.Now.Year - 18)
+        if (birthYear < 1920 || birthYear > DateTime.UtcNow.Year - 18)
             return new ErrorDataResult<bool>(false, "Geçersiz doğum yılı veya 18 yaşından küçük kullanıcı.");
 
-        // 3. Türkçe İsim Büyütme
-        var culture = new CultureInfo("tr-TR");
-        var upperFirstName = firstName.Trim().ToUpper(culture);
-        var upperLastName = lastName.Trim().ToUpper(culture);
+        // 3. Sistem Kültüründen Bağımsız Türkçe İsim Büyütme
+        var upperFirstName = ToTurkishUpper(firstName);
+        var upperLastName = ToTurkishUpper(lastName);
 
         var soapEnvelope = $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" 
@@ -63,8 +75,7 @@ public class NviVerificationManager : INviVerificationService
 
         try
         {
-            // Doğru NVİ Endpoint Adresi: /Service/KPSPublic.asmx
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://tckimlik.nvi.gov.tr/Service/KPSPublic.asmx")
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://tckimlik.nvi.gov.tr/Service/KPSPublic.asmx")
             {
                 Content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml")
             };
@@ -75,6 +86,8 @@ public class NviVerificationManager : INviVerificationService
                 return new ErrorDataResult<bool>(false, "Nüfus Müdürlüğü doğrulama servisine bağlanılamadı.");
 
             var xmlResponse = await response.Content.ReadAsStringAsync();
+            // XML entity hatasını engellemek için temizlik:
+            xmlResponse = xmlResponse.Replace("&nbsp;", " ");
 
             XNamespace ns = "http://tckimlik.nvi.gov.tr/WS";
             var doc = XDocument.Parse(xmlResponse);

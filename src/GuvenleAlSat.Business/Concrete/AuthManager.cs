@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using GuvenleAlSat.Business.Abstract;
 using GuvenleAlSat.Business.DTOs;
 using GuvenleAlSat.Core.Utilities.Results;
@@ -65,9 +64,23 @@ public class AuthManager : IAuthService
 
     public async Task<IDataResult<AccessToken>> RegisterAsync(RegisterDto dto, string ipAddress)
     {
-        var existingUser = await _userManager.FindByEmailAsync(dto.Email.Trim());
+        var email = dto.Email.Trim();
+        var existingUser = await _userManager.FindByEmailAsync(email);
+
+        // 1. Kullanıcı varsa kontrol et
         if (existingUser != null)
-            return new ErrorDataResult<AccessToken>("Bu e-posta adresiyle zaten kayıtlı bir hesap var.");
+        {
+            if (existingUser.EmailConfirmed)
+            {
+                return new ErrorDataResult<AccessToken>("Bu e-posta adresiyle zaten aktif bir hesap kayıtlı.");
+            }
+
+            // Henüz onaylanmamış eski/süresi geçmiş kaydı ve bağlı tokenları temizle:
+            var oldTokens = await _context.RefreshTokens.Where(r => r.UserId == existingUser.Id).ToListAsync();
+            _context.RefreshTokens.RemoveRange(oldTokens);
+            await _userManager.DeleteAsync(existingUser);
+            await _context.SaveChangesAsync();
+        }
 
         var cleanFirstName = Regex.Replace(dto.FirstName?.Trim() ?? string.Empty, @"\s+", " ");
         var cleanLastName = Regex.Replace(dto.LastName?.Trim() ?? string.Empty, @"\s+", " ");
@@ -76,13 +89,35 @@ public class AuthManager : IAuthService
         var normalizedLastName = ToTurkishUpper(cleanLastName);
         var nationalId = (dto.NationalIdNumber ?? string.Empty).Trim();
 
-        // 6 Haneli E-posta Doğrulama Kodu Üret (15 dakika geçerli)
+        // 2. NVİ Kimlik Doğrulaması (Hata varsa kayıt durdurulur)
+        if (!string.IsNullOrWhiteSpace(nationalId) && dto.BirthYear.HasValue)
+        {
+            var nviResult = await _nviService.VerifyAsync(
+                nationalId,
+                normalizedFirstName,
+                normalizedLastName,
+                dto.BirthYear.Value
+            );
+
+            if (nviResult == null || !nviResult.Success)
+            {
+                return new ErrorDataResult<AccessToken>(
+                    nviResult?.Message ?? "Kimlik bilgileri doğrulanamadı! Lütfen T.C. Kimlik No, Ad, Soyad ve Doğum Yılınızı kontrol ediniz."
+                );
+            }
+        }
+        else
+        {
+            return new ErrorDataResult<AccessToken>("T.C. Kimlik Numarası ve Doğum Yılı zorunludur.");
+        }
+
+        // 3. 6 Haneli Doğrulama Kodu Üret (3 Dakika Geçerli)
         var verificationCode = new Random().Next(100000, 999999).ToString();
 
         var user = new ApplicationUser
         {
-            UserName = dto.Email.Trim(),
-            Email = dto.Email.Trim(),
+            UserName = email,
+            Email = email,
             PhoneNumber = dto.PhoneNumber?.Trim(),
             FirstName = normalizedFirstName,
             LastName = normalizedLastName,
@@ -93,7 +128,7 @@ public class AuthManager : IAuthService
             NviVerifiedAt = DateTime.UtcNow,
             EmailConfirmed = false,
             EmailVerificationCode = verificationCode,
-            EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(3), // 3 DAKİKA
             StoreName = dto.UserType == UserType.Corporate ? dto.StoreName?.Trim() : null,
             StoreSlug = (dto.UserType == UserType.Corporate && !string.IsNullOrWhiteSpace(dto.StoreName))
                 ? ToSlug(dto.StoreName)
@@ -102,33 +137,7 @@ public class AuthManager : IAuthService
             TaxOffice = dto.TaxOffice?.Trim()
         };
 
-        // 2. NVİ Kimlik Doğrulaması (KPS Entegrasyonu)
-        if (!string.IsNullOrWhiteSpace(nationalId) && dto.BirthYear.HasValue)
-        {
-            try
-            {
-                var nviResult = await _nviService.VerifyAsync(
-                    nationalId,
-                    normalizedFirstName,
-                    normalizedLastName,
-                    dto.BirthYear.Value
-                );
-
-                if (nviResult != null && nviResult.Success)
-                {
-                    user.IsNviVerified = true;
-                    user.NviVerifiedAt = DateTime.UtcNow;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[NVİ Servis İstisnası / Yerel Geçiş]: {ex.Message}");
-                user.IsNviVerified = true;
-                user.NviVerifiedAt = DateTime.UtcNow;
-            }
-        }
-
-        // 3. Identity ile Kullanıcı Oluşturma
+        // 4. Identity ile Kullanıcı Oluşturma
         var result = await _userManager.CreateAsync(user, dto.Password);
         if (!result.Succeeded)
         {
@@ -136,7 +145,7 @@ public class AuthManager : IAuthService
             return new ErrorDataResult<AccessToken>($"Kayıt başarısız: {errors}");
         }
 
-        // 4. Varsayılan Üyelik Paketi Tanımlama
+        // 5. Varsayılan Üyelik Paketi
         try
         {
             var defaultPlan = await _context.SubscriptionPlans
@@ -159,7 +168,7 @@ public class AuthManager : IAuthService
             Console.WriteLine($"[Subscription Plan Uyarısı]: {ex.Message}");
         }
 
-        // 5. Token Üretimi ve Refresh Token Kaydı
+        // 6. Token Üretimi ve Refresh Token Kaydı
         var roles = await _userManager.GetRolesAsync(user);
         var token = _tokenHelper.CreateToken(
             user.Id,
@@ -173,7 +182,7 @@ public class AuthManager : IAuthService
         SaveRefreshToken(user.Id, token.RefreshToken, token.RefreshTokenExpiration, ipAddress);
         await _context.SaveChangesAsync();
 
-        // 6. E-posta ile 6 Haneli Doğrulama Kodunu Gönder (HTML Şablonlu)
+        // 7. E-posta ile Doğrulama Kodu Gönderimi (3 Dakika Süreli Şablon)
         _ = Task.Run(async () =>
         {
             try
@@ -188,13 +197,13 @@ public class AuthManager : IAuthService
                             Sayın <strong>{user.FirstName} {user.LastName}</strong>,
                         </p>
                         <p style=""color: #475569; font-size: 14px; line-height: 1.5;"">
-                            Hesabınızı güvenle aktifleştirmek için aşağıdaki 6 haneli güvenlik kodunu kullanınız:
+                            Hesabınızı aktifleştirmek için aşağıdaki 6 haneli güvenlik kodunu kullanınız:
                         </p>
                         <div style=""background-color: #f1f5f9; padding: 16px; text-align: center; border-radius: 6px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #0055b8; margin: 24px 0;"">
                             {verificationCode}
                         </div>
-                        <p style=""color: #94a3b8; font-size: 12px; margin-top: 16px;"">
-                            * Bu kod 15 dakika boyunca geçerlidir. Güvenliğiniz için bu kodu kimseyle paylaşmayınız.
+                        <p style=""color: #dc2626; font-size: 13px; font-weight: bold; margin-top: 16px;"">
+                            * Bu kod 3 dakika boyunca geçerlidir. Süre bitiminde kod geçersiz olacaktır.
                         </p>
                     </div>";
 
@@ -211,7 +220,7 @@ public class AuthManager : IAuthService
             }
         });
 
-        return new SuccessDataResult<AccessToken>(token, "Hesap başarıyla oluşturuldu.");
+        return new SuccessDataResult<AccessToken>(token, "Hesap oluşturuldu. Lütfen 3 dakika içinde e-posta adresinize gelen doğrulama kodunu giriniz.");
     }
 
     public async Task<IDataResult<AccessToken>> LoginAsync(LoginDto dto, string ipAddress)
