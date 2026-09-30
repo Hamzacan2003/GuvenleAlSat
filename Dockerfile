@@ -19,12 +19,16 @@ RUN dotnet publish "GuvenleAlSat.API.csproj" -c Release -o /app/publish /p:UseAp
 # 2. Çalıştırma (Runtime) Aşaması - .NET 10 ASP.NET
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
 WORKDIR /app
+
+# Türkçe kültür (tr-TR) desteği için ICU paketlerini yükle:
+RUN apt-get update && apt-get install -y --no-install-recommends libicu-dev && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish .
 
-# Linux Container (Render Free Tier) Status 139 segfault önleme bayrakları:
+# Linux Container bayrakları
 ENV DOTNET_EnableWriteXorExecute=0
 ENV DOTNET_gcServer=0
-ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
