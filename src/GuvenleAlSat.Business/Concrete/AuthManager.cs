@@ -35,19 +35,45 @@ public class AuthManager : IAuthService
         _emailService = emailService;
     }
 
+    private static string ToTurkishUpper(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        return text.Trim()
+            .Replace("i", "İ")
+            .Replace("ı", "I")
+            .Replace("ç", "Ç")
+            .Replace("ğ", "Ğ")
+            .Replace("ö", "Ö")
+            .Replace("ş", "Ş")
+            .Replace("ü", "Ü")
+            .ToUpperInvariant();
+    }
+
+    private static string ToSlug(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        var clean = text.Trim().ToLowerInvariant()
+            .Replace("ı", "i")
+            .Replace("ğ", "g")
+            .Replace("ü", "u")
+            .Replace("ş", "s")
+            .Replace("ö", "o")
+            .Replace("ç", "c")
+            .Replace(" ", "-");
+        return Regex.Replace(clean, @"[^a-z0-9\-]", "");
+    }
+
     public async Task<IDataResult<AccessToken>> RegisterAsync(RegisterDto dto, string ipAddress)
     {
         var existingUser = await _userManager.FindByEmailAsync(dto.Email.Trim());
         if (existingUser != null)
             return new ErrorDataResult<AccessToken>("Bu e-posta adresiyle zaten kayıtlı bir hesap var.");
 
-        // 1. Türkçe karakter ve çift isim normalizasyonu
-        var culture = new CultureInfo("tr-TR");
         var cleanFirstName = Regex.Replace(dto.FirstName?.Trim() ?? string.Empty, @"\s+", " ");
         var cleanLastName = Regex.Replace(dto.LastName?.Trim() ?? string.Empty, @"\s+", " ");
 
-        var normalizedFirstName = cleanFirstName.ToUpper(culture);
-        var normalizedLastName = cleanLastName.ToUpper(culture);
+        var normalizedFirstName = ToTurkishUpper(cleanFirstName);
+        var normalizedLastName = ToTurkishUpper(cleanLastName);
         var nationalId = (dto.NationalIdNumber ?? string.Empty).Trim();
 
         // 6 Haneli E-posta Doğrulama Kodu Üret (15 dakika geçerli)
@@ -70,14 +96,7 @@ public class AuthManager : IAuthService
             EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
             StoreName = dto.UserType == UserType.Corporate ? dto.StoreName?.Trim() : null,
             StoreSlug = (dto.UserType == UserType.Corporate && !string.IsNullOrWhiteSpace(dto.StoreName))
-                ? dto.StoreName.ToLower(culture)
-                    .Replace(" ", "-")
-                    .Replace("ç", "c")
-                    .Replace("ğ", "g")
-                    .Replace("ı", "i")
-                    .Replace("ö", "o")
-                    .Replace("ş", "s")
-                    .Replace("ü", "u")
+                ? ToSlug(dto.StoreName)
                 : null,
             TaxNumber = dto.TaxNumber?.Trim(),
             TaxOffice = dto.TaxOffice?.Trim()
@@ -188,7 +207,6 @@ public class AuthManager : IAuthService
             catch (Exception ex)
             {
                 Console.WriteLine($"[E-POSTA GÖNDERME HATASI]: {ex.Message}");
-                // Geliştirici konsoluna basılır, test yaparken buradan da görebilirsiniz:
                 Console.WriteLine($"[TEST DOĞRULAMA KODU]: {verificationCode} -> {user.Email}");
             }
         });
@@ -202,7 +220,6 @@ public class AuthManager : IAuthService
         if (user == null || !user.IsActive)
             return new ErrorDataResult<AccessToken>("Geçersiz e-posta veya şifre.");
 
-        // 1. Hesap kilitli / bloke mi kontrol et
         if (await _userManager.IsLockedOutAsync(user))
         {
             return new ErrorDataResult<AccessToken>(
@@ -210,14 +227,11 @@ public class AuthManager : IAuthService
             );
         }
 
-        // 2. Şifreyi doğrula
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
         if (!isPasswordValid)
         {
-            // Hatalı deneme sayısını 1 artır
             await _userManager.AccessFailedAsync(user);
 
-            // Eğer bu hatayla birlikte 3 hakkı dolduysa
             if (await _userManager.IsLockedOutAsync(user))
             {
                 return new ErrorDataResult<AccessToken>(
@@ -230,7 +244,6 @@ public class AuthManager : IAuthService
             return new ErrorDataResult<AccessToken>($"Geçersiz e-posta veya şifre. Kalan deneme hakkınız: {remaining}");
         }
 
-        // Giriş başarılıysa hatalı deneme sayacını sıfırla
         await _userManager.ResetAccessFailedCountAsync(user);
 
         var roles = await _userManager.GetRolesAsync(user);
