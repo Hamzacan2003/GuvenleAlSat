@@ -1,0 +1,300 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|solutionrelative:src\\guvenlealsat.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{706B6331-A758-4EDD-A941-6DC343FDD4A2}|\u00C7\u00F6z\u00FCm \u00D6\u011Feleri{706B6331-A758-4EDD-A941-6DC343FDD4A2}|C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{706B6331-A758-4EDD-A941-6DC343FDD4A2}|\u00C7\u00F6z\u00FCm \u00D6\u011Feleri{706B6331-A758-4EDD-A941-6DC343FDD4A2}|solutionrelative:Dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|solutionrelative:src\\guvenlealsat.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.business\\concrete\\authmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|solutionrelative:src\\guvenlealsat.business\\concrete\\authmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|solutionrelative:src\\guvenlealsat.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.business\\concrete\\smtpemailmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|solutionrelative:src\\guvenlealsat.business\\concrete\\smtpemailmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.business\\abstract\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|solutionrelative:src\\guvenlealsat.business\\abstract\\iemailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.dataaccess\\concrete\\entityfreamwork\\contexts\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|solutionrelative:src\\guvenlealsat.dataaccess\\concrete\\entityfreamwork\\contexts\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.dataaccess\\entities\\users\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|solutionrelative:src\\guvenlealsat.dataaccess\\entities\\users\\applicationuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|solutionrelative:src\\guvenlealsat.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.business\\concrete\\listingmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|solutionrelative:src\\guvenlealsat.business\\concrete\\listingmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.dataaccess\\entities\\listings\\realestatedetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|solutionrelative:src\\guvenlealsat.dataaccess\\entities\\listings\\realestatedetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.business\\dtos\\listingdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F0EAA550-6602-E4E2-C1FD-865886B71324}|src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj|solutionrelative:src\\guvenlealsat.business\\dtos\\listingdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.api\\controllers\\listingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FA835893-B913-279E-B126-4949261B1D43}|src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj|solutionrelative:src\\guvenlealsat.api\\controllers\\listingcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.dataaccess\\entities\\listings\\listing.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1C522A8E-E034-F112-427C-FBBCD8BBDB9F}|src\\GuvenleAlSat.DataAccess\\GuvenleAlSat.DataAccess.csproj|solutionrelative:src\\guvenlealsat.dataaccess\\entities\\listings\\listing.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8D655EDA-FBF7-5EBE-9BB9-9A8D4D41F1A1}|src\\GuvenleAlSat.Core\\GuvenleAlSat.Core.csproj|c:\\users\\hamzacan.altintop\\desktop\\abb-projeler\\guvenlealsat\\src\\guvenlealsat.core\\utilities\\security\\jwt\\jwthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8D655EDA-FBF7-5EBE-9BB9-9A8D4D41F1A1}|src\\GuvenleAlSat.Core\\GuvenleAlSat.Core.csproj|solutionrelative:src\\guvenlealsat.core\\utilities\\security\\jwt\\jwthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 100,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Dockerfile",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\Dockerfile",
+              "RelativeDocumentMoniker": "Dockerfile",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\Dockerfile",
+              "RelativeToolTip": "Dockerfile",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAtAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-09-30T10:45:10.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SmtpEmailManager.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\SmtpEmailManager.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Business\\Concrete\\SmtpEmailManager.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\SmtpEmailManager.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Business\\Concrete\\SmtpEmailManager.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwCoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:32:07.487Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "IEmailService.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Abstract\\IEmailService.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Business\\Abstract\\IEmailService.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Abstract\\IEmailService.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Business\\Abstract\\IEmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:32:03.366Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Program.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.API\\Program.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Program.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.API\\Program.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAGUAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T07:22:19.996Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\appsettings.json",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\appsettings.json",
+              "RelativeToolTip": "src\\GuvenleAlSat.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-30T06:52:19.107Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ApplicationUser.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Users\\ApplicationUser.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.DataAccess\\Entities\\Users\\ApplicationUser.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Users\\ApplicationUser.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.DataAccess\\Entities\\Users\\ApplicationUser.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAwB0AAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:46:43.324Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.API\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.API\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAcwFAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:27:27.058Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Concrete\\EntityFreamwork\\Contexts\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.DataAccess\\Concrete\\EntityFreamwork\\Contexts\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Concrete\\EntityFreamwork\\Contexts\\AppDbContext.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.DataAccess\\Concrete\\EntityFreamwork\\Contexts\\AppDbContext.cs",
+              "ViewState": "AgIAAD8AAAAAAAAAAAAgwF0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:13:16.371Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ListingManager.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\ListingManager.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Business\\Concrete\\ListingManager.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\ListingManager.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Business\\Concrete\\ListingManager.cs",
+              "ViewState": "AgIAAF4BAAAAAAAAAAAqwHoBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:09:50.864Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ListingDtos.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\DTOs\\ListingDtos.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Business\\DTOs\\ListingDtos.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\DTOs\\ListingDtos.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Business\\DTOs\\ListingDtos.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAuwCYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:07:58.26Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ListingController.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\ListingController.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.API\\Controllers\\ListingController.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\ListingController.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.API\\Controllers\\ListingController.cs",
+              "ViewState": "AgIAADkAAAAAAAAAAAAswEgAAABJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:07:55.366Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "Listing.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\Listing.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\Listing.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\Listing.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\Listing.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:06:58.296Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "RealEstateDetail.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\RealEstateDetail.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\RealEstateDetail.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\RealEstateDetail.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.DataAccess\\Entities\\Listings\\RealEstateDetail.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T06:06:42.689Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "JwtHelper.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Core\\Utilities\\Security\\Jwt\\JwtHelper.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Core\\Utilities\\Security\\Jwt\\JwtHelper.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Core\\Utilities\\Security\\Jwt\\JwtHelper.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Core\\Utilities\\Security\\Jwt\\JwtHelper.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAIwEcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T05:48:24.038Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.API\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.API\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAMQAAAAAAAAAAAAgwOEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-30T05:45:37.127Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthManager.cs",
+              "DocumentMoniker": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\AuthManager.cs",
+              "RelativeDocumentMoniker": "src\\GuvenleAlSat.Business\\Concrete\\AuthManager.cs",
+              "ToolTip": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\Concrete\\AuthManager.cs",
+              "RelativeToolTip": "src\\GuvenleAlSat.Business\\Concrete\\AuthManager.cs",
+              "ViewState": "AgIAANwAAAAAAAAAAAAiwPkAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-28T07:49:46.651Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

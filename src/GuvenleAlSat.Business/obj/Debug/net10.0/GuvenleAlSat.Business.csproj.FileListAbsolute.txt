@@ -1,0 +1,17 @@
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.csproj.AssemblyReference.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.AssemblyInfoInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.AssemblyInfo.cs
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.csproj.CoreCompileInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.Business.deps.json
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.Business.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.Business.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.Core.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.DataAccess.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.Core.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\bin\Debug\net10.0\GuvenleAlSat.DataAccess.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleA.286ACFC8.Up2Date
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\refint\GuvenleAlSat.Business.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\GuvenleAlSat.Business.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Business\obj\Debug\net10.0\ref\GuvenleAlSat.Business.dll

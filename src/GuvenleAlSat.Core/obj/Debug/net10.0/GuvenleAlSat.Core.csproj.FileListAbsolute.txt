@@ -1,0 +1,12 @@
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\bin\Debug\net10.0\GuvenleAlSat.Core.deps.json
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\bin\Debug\net10.0\GuvenleAlSat.Core.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\bin\Debug\net10.0\GuvenleAlSat.Core.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.csproj.AssemblyReference.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.AssemblyInfoInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.AssemblyInfo.cs
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.csproj.CoreCompileInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\refint\GuvenleAlSat.Core.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\GuvenleAlSat.Core.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.Core\obj\Debug\net10.0\ref\GuvenleAlSat.Core.dll

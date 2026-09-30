@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GuvenleAlSat.API/GuvenleAlSat.API.csproj" />
+    <Project Path="src/GuvenleAlSat.Business/GuvenleAlSat.Business.csproj" />
+    <Project Path="src/GuvenleAlSat.Core/GuvenleAlSat.Core.csproj" />
+    <Project Path="src/GuvenleAlSat.DataAccess/GuvenleAlSat.DataAccess.csproj" />
+  </Folder>
+  <Folder Name="/Çözüm Öğeleri/">
+    <File Path="Dockerfile" />
+  </Folder>
+</Solution>

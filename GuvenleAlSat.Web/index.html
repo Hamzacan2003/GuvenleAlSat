@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sahibinden.com benzeri - GüvenleAlSat.com</title>
+    <!-- Tailwind CSS CDN (Kesin ve anında çalışan motor) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              shYellow: '#ffe100',
+              shHeader: '#303e51',
+              shHeaderDark: '#232f3e',
+              shBlue: '#438ed8',
+              shLink: '#0055b8',
+              shBorder: '#d9d9d9',
+              shBg: '#f8f8f8',
+              shHighlight: '#fffce6'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f7f7f7;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

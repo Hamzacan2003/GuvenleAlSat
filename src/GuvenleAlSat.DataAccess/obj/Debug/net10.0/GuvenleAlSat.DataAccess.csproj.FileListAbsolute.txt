@@ -1,0 +1,17 @@
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.DataAccess.deps.json
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.DataAccess.runtimeconfig.json
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.DataAccess.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.DataAccess.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.Core.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\bin\Debug\net10.0\GuvenleAlSat.Core.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.csproj.AssemblyReference.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.AssemblyInfoInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.AssemblyInfo.cs
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.csproj.CoreCompileInputs.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleA.9A26374A.Up2Date
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\refint\GuvenleAlSat.DataAccess.dll
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.pdb
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\GuvenleAlSat.DataAccess.genruntimeconfig.cache
+C:\Users\hamzacan.altintop\Desktop\ABB-Projeler\GuvenleAlSat\src\GuvenleAlSat.DataAccess\obj\Debug\net10.0\ref\GuvenleAlSat.DataAccess.dll
