@@ -1,5 +1,6 @@
-﻿using System.Net;
-using System.Net.Mail;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using GuvenleAlSat.Business.Abstract;
 using Microsoft.Extensions.Configuration;
 
@@ -8,42 +9,53 @@ namespace GuvenleAlSat.Business.Concrete;
 public class SmtpEmailManager : IEmailService
 {
     private readonly IConfiguration _configuration;
+    private readonly HttpClient _httpClient;
 
-    public SmtpEmailManager(IConfiguration configuration)
+    public SmtpEmailManager(IConfiguration configuration, HttpClient httpClient)
     {
         _configuration = configuration;
+        _httpClient = httpClient;
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
     {
-        var section = _configuration.GetSection("EmailSettings");
-        var host = section["SmtpServer"] ?? "smtp.gmail.com";
-        var port = int.TryParse(section["Port"], out var p) ? p : 587;
-        var senderEmail = section["SenderEmail"] ?? "";
-        var senderName = section["SenderName"] ?? "sahibinden.com";
-        var password = section["Password"] ?? "";
-        var enableSsl = bool.TryParse(section["EnableSsl"], out var ssl) && ssl;
+        var apiKey = _configuration["EmailSettings:ResendApiKey"]
+                     ?? _configuration["RESEND_API_KEY"]
+                     ?? Environment.GetEnvironmentVariable("RESEND_API_KEY");
 
-        // Konsola her zaman bas (geliştirme için garanti)
-        Console.WriteLine($"[E-POSTA GÖNDERİLİYOR]: {toEmail} | Konu: {subject}");
-
-        using var client = new SmtpClient(host, port)
+        // API Key yoksa konsola bas ve çık
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
-            Credentials = new NetworkCredential(senderEmail, password),
-            EnableSsl = enableSsl
+            Console.WriteLine($"[RESEND UYARI]: API Key bulunamadı. Kod konsola yazdırılıyor -> {toEmail}");
+            return;
+        }
+
+        Console.WriteLine($"[RESEND İLE GÖNDERİLİYOR]: {toEmail} | Konu: {subject}");
+
+        var payload = new
+        {
+            from = "GuvenleAlSat <onboarding@resend.dev>",
+            to = new[] { toEmail },
+            subject = subject,
+            html = htmlMessage
         };
 
-        var mail = new MailMessage
+        var json = JsonSerializer.Serialize(payload);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Trim());
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        if (response.IsSuccessStatusCode)
         {
-            From = new MailAddress(senderEmail, senderName),
-            Subject = subject,
-            Body = htmlMessage,
-            IsBodyHtml = true
-        };
-
-        mail.To.Add(toEmail);
-
-        await client.SendMailAsync(mail);
-        Console.WriteLine($"[E-POSTA BAŞARIYLA İLETİLDİ]: {toEmail}");
+            Console.WriteLine($"[E-POSTA BAŞARIYLA İLETİLDİ]: {toEmail}");
+        }
+        else
+        {
+            Console.WriteLine($"[RESEND API HATASI]: {response.StatusCode} - {responseBody}");
+            throw new Exception($"Resend API Hatası: {responseBody}");
+        }
     }
 }

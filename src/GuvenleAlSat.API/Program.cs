@@ -142,7 +142,7 @@ builder.Services.AddScoped<IStorageService, CloudflareR2StorageManager>();
 builder.Services.AddScoped<IListingService, ListingManager>();
 builder.Services.AddScoped<ICategoryService, CategoryManager>();
 builder.Services.AddScoped<ILocationService, LocationManager>();
-builder.Services.AddScoped<IEmailService, SmtpEmailManager>();
+builder.Services.AddHttpClient<IEmailService, SmtpEmailManager>();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 
