@@ -19,30 +19,32 @@ public class SmtpEmailManager : IEmailService
 
     public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
     {
-        var apiKey = _configuration["EmailSettings:ResendApiKey"]
-                     ?? _configuration["RESEND_API_KEY"]
-                     ?? Environment.GetEnvironmentVariable("RESEND_API_KEY");
+        var apiKey = _configuration["EmailSettings:BrevoApiKey"]
+                     ?? _configuration["BREVO_API_KEY"]
+                     ?? Environment.GetEnvironmentVariable("BREVO_API_KEY");
 
-        // API Key yoksa konsola bas ve çık
+        var senderEmail = _configuration["EmailSettings:SenderEmail"]
+                          ?? "hamzacana98@gmail.com";
+
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            Console.WriteLine($"[RESEND UYARI]: API Key bulunamadı. Kod konsola yazdırılıyor -> {toEmail}");
+            Console.WriteLine($"[BREVO UYARI]: API Key eksik. Hedef: {toEmail}");
             return;
         }
 
-        Console.WriteLine($"[RESEND İLE GÖNDERİLİYOR]: {toEmail} | Konu: {subject}");
+        Console.WriteLine($"[BREVO İLE GÖNDERİLİYOR]: {toEmail} | Konu: {subject}");
 
         var payload = new
         {
-            from = "GuvenleAlSat <onboarding@resend.dev>",
-            to = new[] { toEmail },
+            sender = new { name = "Güvenle Al Sat", email = senderEmail.Trim() },
+            to = new[] { new { email = toEmail.Trim() } },
             subject = subject,
-            html = htmlMessage
+            htmlContent = htmlMessage
         };
 
         var json = JsonSerializer.Serialize(payload);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Trim());
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+        request.Headers.Add("api-key", apiKey.Trim());
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.SendAsync(request);
@@ -54,8 +56,8 @@ public class SmtpEmailManager : IEmailService
         }
         else
         {
-            Console.WriteLine($"[RESEND API HATASI]: {response.StatusCode} - {responseBody}");
-            throw new Exception($"Resend API Hatası: {responseBody}");
+            Console.WriteLine($"[BREVO API HATASI]: {response.StatusCode} - {responseBody}");
+            throw new Exception($"Brevo API Hatası: {responseBody}");
         }
     }
 }
