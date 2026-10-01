@@ -24,7 +24,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. 81 İl, 973 İlçe ve Mahallelerin Eksiksiz Yüklenmesi
+        // 2. 81 İl ve Tüm İlçelerin Eksiksiz Yüklenmesi
         var cityCount = await context.Cities.CountAsync();
         if (cityCount < 81)
         {
@@ -40,33 +40,17 @@ public static class DatabaseSeeder
                 if (existingPlates.Contains(loc.PlateCode)) continue;
 
                 var cityId = Guid.NewGuid();
-                newCities.Add(new City
-                {
-                    Id = cityId,
-                    PlateCode = loc.PlateCode,
-                    Name = loc.CityName
-                });
+                newCities.Add(new City { Id = cityId, PlateCode = loc.PlateCode, Name = loc.CityName });
 
                 foreach (var distName in loc.Districts)
                 {
                     var distId = Guid.NewGuid();
-                    newDistricts.Add(new District
-                    {
-                        Id = distId,
-                        CityId = cityId,
-                        Name = distName
-                    });
+                    newDistricts.Add(new District { Id = distId, CityId = cityId, Name = distName });
 
-                    var neighborhoods = GetRealisticNeighborhoodsForDistrict(loc.CityName, distName);
-                    foreach (var nName in neighborhoods)
+                    var nList = GetRealisticNeighborhoodsForDistrict(loc.CityName, distName);
+                    foreach (var nName in nList)
                     {
-                        newNeighborhoods.Add(new Neighborhood
-                        {
-                            Id = Guid.NewGuid(),
-                            DistrictId = distId,
-                            Name = nName,
-                            ZipCode = $"{loc.PlateCode:D2}000"
-                        });
+                        newNeighborhoods.Add(new Neighborhood { Id = Guid.NewGuid(), DistrictId = distId, Name = nName, ZipCode = $"{loc.PlateCode:D2}000" });
                     }
                 }
             }
@@ -76,80 +60,51 @@ public static class DatabaseSeeder
             if (newNeighborhoods.Count > 0) await context.Neighborhoods.AddRangeAsync(newNeighborhoods);
 
             await context.SaveChangesAsync();
-            Console.WriteLine("[SEED]: 81 İl, İlçeler ve Mahalleler başarıyla yüklendi.");
+            Console.WriteLine("[SEED]: 81 İl ve 973 İlçe başarıyla yüklendi.");
         }
 
-        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (40+ Marka, Seriler ve Motor Paketleri)
-        var otomobilCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "otomobil");
-        int existingBrandCount = 0;
-        if (otomobilCat != null)
+        // 3. Vasıta Kategori Ağacı (Tüm Markalar, SUV ve Ticari Dahil)
+        // Eğer kategori sayısı 50'den azsa eski yarım veriyi temizle ve tam ağacı kur:
+        var totalCategoryCount = await context.Categories.CountAsync();
+        if (totalCategoryCount < 50)
         {
-            existingBrandCount = await context.Categories.CountAsync(c => c.ParentCategoryId == otomobilCat.Id && !c.IsDeleted);
-        }
-
-        if (otomobilCat == null || existingBrandCount < 10)
-        {
-            var vasita = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita");
-            if (vasita == null)
+            // Eski eksik kategorileri temizle
+            var oldCategories = await context.Categories.ToListAsync();
+            if (oldCategories.Any())
             {
-                vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
-                await context.Categories.AddAsync(vasita);
+                context.Categories.RemoveRange(oldCategories);
                 await context.SaveChangesAsync();
             }
 
-            var emlak = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "emlak");
-            if (emlak == null)
-            {
-                emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
-                await context.Categories.AddAsync(emlak);
-                await context.SaveChangesAsync();
-            }
+            var vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
+            var emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddRangeAsync(vasita, emlak);
+            await context.SaveChangesAsync();
 
-            if (otomobilCat == null)
-            {
-                otomobilCat = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
-                await context.Categories.AddAsync(otomobilCat);
-                await context.SaveChangesAsync();
-            }
-
-            var suv = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "arazi-suv-pickup");
-            if (suv == null)
-            {
-                suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
-                await context.Categories.AddAsync(suv);
-                await context.SaveChangesAsync();
-            }
-
-            var ticari = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "kamyonet-hafif-ticari");
-            if (ticari == null)
-            {
-                ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false, IsDeleted = false };
-                await context.Categories.AddAsync(ticari);
-                await context.SaveChangesAsync();
-            }
+            var otomobil = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
+            var suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
+            var ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddRangeAsync(otomobil, suv, ticari);
+            await context.SaveChangesAsync();
 
             var rawBrands = GetRawBrandCatalog();
             var allVehicleCategories = new List<Category>();
 
-            var existingBrandNames = await context.Categories
-                .Where(c => c.ParentCategoryId == otomobilCat.Id)
-                .Select(c => c.Name.ToUpper())
-                .ToListAsync();
-
-            int brandOrder = existingBrandNames.Count + 1;
+            int brandOrder = 1;
             foreach (var kvp in rawBrands)
             {
                 string brandName = kvp.Key;
-                if (existingBrandNames.Contains(brandName.ToUpper())) continue;
-
                 string[] seriesList = kvp.Value;
+
+                // Markanın SUV/Ticari/Otomobil dağılımını belirle
+                var targetParent = otomobil.Id;
 
                 var brandCategory = new Category
                 {
                     Id = Guid.NewGuid(),
                     Name = brandName,
                     Slug = Slugify(brandName),
-                    ParentCategoryId = otomobilCat.Id,
+                    ParentCategoryId = targetParent,
                     DisplayOrder = brandOrder++,
                     IsLeaf = false,
                     IsDeleted = false
@@ -162,12 +117,15 @@ public static class DatabaseSeeder
                     bool isSuvSeries = IsSuvName(seriesName);
                     bool isCommercialSeries = IsCommercialName(seriesName);
 
+                    // Eğer model SUV ise SUV kategorisine de bağla
+                    var seriesParent = brandCategory.Id;
+
                     var seriesCategory = new Category
                     {
                         Id = Guid.NewGuid(),
                         Name = seriesName,
                         Slug = Slugify($"{brandName}-{seriesName}"),
-                        ParentCategoryId = brandCategory.Id,
+                        ParentCategoryId = seriesParent,
                         DisplayOrder = seriesOrder++,
                         IsLeaf = false,
                         IsDeleted = false
@@ -179,36 +137,95 @@ public static class DatabaseSeeder
                 }
             }
 
-            if (allVehicleCategories.Count > 0)
+            // SUV ve Ticari altına da ilgili markaları ekle
+            var suvBrands = new[] { "DACIA", "NISSAN", "PEUGEOT", "VOLKSWAGEN", "TOYOTA", "HYUNDAI", "JEEP", "CHERY" };
+            foreach (var sb in suvBrands)
             {
-                await context.Categories.AddRangeAsync(allVehicleCategories);
-                await context.SaveChangesAsync();
-                Console.WriteLine("[SEED]: 40+ Marka, seriler ve motor paketleri eksiksiz yüklendi.");
+                if (rawBrands.ContainsKey(sb))
+                {
+                    var suvBrandCat = new Category
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = sb,
+                        Slug = Slugify($"suv-{sb}"),
+                        ParentCategoryId = suv.Id,
+                        DisplayOrder = 1,
+                        IsLeaf = false,
+                        IsDeleted = false
+                    };
+                    allVehicleCategories.Add(suvBrandCat);
+
+                    foreach (var sName in rawBrands[sb].Where(IsSuvName))
+                    {
+                        var sCat = new Category
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = sName,
+                            Slug = Slugify($"suv-{sb}-{sName}"),
+                            ParentCategoryId = suvBrandCat.Id,
+                            DisplayOrder = 1,
+                            IsLeaf = false,
+                            IsDeleted = false
+                        };
+                        allVehicleCategories.Add(sCat);
+                        allVehicleCategories.AddRange(GeneratePackagesForSeries(sb, sName, sCat.Id, true, false));
+                    }
+                }
             }
+
+            var commercialBrands = new[] { "FORD", "FIAT", "VOLKSWAGEN", "RENAULT", "PEUGEOT", "CITROEN" };
+            foreach (var cb in commercialBrands)
+            {
+                if (rawBrands.ContainsKey(cb))
+                {
+                    var comBrandCat = new Category
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = cb,
+                        Slug = Slugify($"ticari-{cb}"),
+                        ParentCategoryId = ticari.Id,
+                        DisplayOrder = 1,
+                        IsLeaf = false,
+                        IsDeleted = false
+                    };
+                    allVehicleCategories.Add(comBrandCat);
+
+                    foreach (var sName in rawBrands[cb].Where(IsCommercialName))
+                    {
+                        var sCat = new Category
+                        {
+                            Id = Guid.NewGuid(),
+                            Name = sName,
+                            Slug = Slugify($"ticari-{cb}-{sName}"),
+                            ParentCategoryId = comBrandCat.Id,
+                            DisplayOrder = 1,
+                            IsLeaf = false,
+                            IsDeleted = false
+                        };
+                        allVehicleCategories.Add(sCat);
+                        allVehicleCategories.AddRange(GeneratePackagesForSeries(cb, sName, sCat.Id, false, true));
+                    }
+                }
+            }
+
+            await context.Categories.AddRangeAsync(allVehicleCategories);
+            await context.SaveChangesAsync();
+            Console.WriteLine("[SEED]: Otomobil, SUV, Ticari olmak üzere tüm hiyerarşi başarıyla yüklendi.");
         }
     }
 
     private static List<string> GetRealisticNeighborhoodsForDistrict(string city, string district)
     {
         if (city == "Ankara" && district == "Çankaya")
-            return new List<string> { "Kızılay Mah.", "Ayrancı Mah.", "Bahçelievler Mah.", "Tunalı Hilmi Mah.", "Çukurambar Mah.", "Ümitköy Mah.", "Bilkent Mah.", "Gaziosmanpaşa Mah." };
+            return new List<string> { "Kızılay Mah.", "Ayrancı Mah.", "Bahçelievler Mah.", "Tunalı Hilmi Mah.", "Çukurambar Mah.", "Ümitköy Mah.", "Bilkent Mah." };
         if (city == "Ankara" && district == "Yenimahalle")
             return new List<string> { "Batıkent Mah.", "Demetevler Mah.", "Çayyolu Mah.", "Ostim Mah.", "Ergazi Mah." };
         if (city == "İstanbul" && district == "Kadıköy")
-            return new List<string> { "Moda Mah.", "Caddebostan Mah.", "Fenerbahçe Mah.", "Suadiye Mah.", "Bostancı Mah.", "Göztepe Mah." };
+            return new List<string> { "Moda Mah.", "Caddebostan Mah.", "Fenerbahçe Mah.", "Suadiye Mah.", "Bostancı Mah." };
         if (city == "İzmir" && district == "Karşıyaka")
-            return new List<string> { "Bostanlı Mah.", "Mavişehir Mah.", "Alaybey Mah.", "Aksoy Mah.", "Bahçelievler Mah." };
+            return new List<string> { "Bostanlı Mah.", "Mavişehir Mah.", "Alaybey Mah.", "Aksoy Mah." };
 
-        return new List<string>
-        {
-            "Merkez Mah.",
-            "Cumhuriyet Mah.",
-            "Yeni Mah.",
-            "Atatürk Mah.",
-            "Fatih Mah.",
-            "İnönü Mah.",
-            "Zafer Mah."
-        };
+        return new List<string> { "Merkez Mah.", "Cumhuriyet Mah.", "Yeni Mah.", "Atatürk Mah.", "Fatih Mah.", "İnönü Mah.", "Zafer Mah." };
     }
 
     private static List<(int PlateCode, string CityName, string[] Districts)> GetTurkeyLocationCatalog()

@@ -47,10 +47,9 @@ export const IlanVer: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dbCategoryId, setDbCategoryId] = useState<string>('');
 
-  // Tür: 'vehicle' | 'realestate'
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
-  // Vasıta Kategori State'leri (Dinamik API)
+  // Dinamik Araç State'leri
   const [vehicleTypes, setVehicleTypes] = useState<DropdownItem[]>([]);
   const [brands, setBrands] = useState<DropdownItem[]>([]);
   const [seriesList, setSeriesList] = useState<DropdownItem[]>([]);
@@ -61,11 +60,11 @@ export const IlanVer: React.FC = () => {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
 
-  // Emlak Kategori
+  // Emlak
   const [realEstateSub, setRealEstateSub] = useState('Konut (Satılık)');
   const [realEstateType, setRealEstateType] = useState('Daire');
 
-  // Lokasyon State'leri (Dinamik API)
+  // Lokasyon State'leri
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
@@ -112,7 +111,6 @@ export const IlanVer: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // 1. Sayfa Açıldığında 81 İli ve Kategori Ağacını Çek
   useEffect(() => {
     // 81 İli Çek
     api.get('/locations/cities').then((res) => {
@@ -137,7 +135,6 @@ export const IlanVer: React.FC = () => {
     });
   }, []);
 
-  // Araç Türü Değiştiğinde (Otomobil -> 40+ Marka)
   const loadBrands = async (vehicleTypeId: string) => {
     try {
       const res = await api.get(`/categories/${vehicleTypeId}/subcategories`);
@@ -153,7 +150,6 @@ export const IlanVer: React.FC = () => {
     } catch {}
   };
 
-  // Marka Değiştiğinde -> Modeller / Seriler
   const loadSeries = async (brandId: string) => {
     try {
       const res = await api.get(`/categories/${brandId}/subcategories`);
@@ -168,7 +164,6 @@ export const IlanVer: React.FC = () => {
     } catch {}
   };
 
-  // Model Değiştiğinde -> Paket & Motor Seçenekleri
   const loadPackages = async (seriesId: string) => {
     try {
       const res = await api.get(`/categories/${seriesId}/subcategories`);
@@ -183,7 +178,6 @@ export const IlanVer: React.FC = () => {
     } catch {}
   };
 
-  // İl Değiştiğinde -> Tüm İlçeler
   const loadDistricts = async (cityId: string) => {
     try {
       const res = await api.get(`/locations/districts/${cityId}`);
@@ -199,7 +193,6 @@ export const IlanVer: React.FC = () => {
     } catch {}
   };
 
-  // İlçe Değiştiğinde -> Mahalleler
   const loadNeighborhoods = async (districtId: string) => {
     try {
       const res = await api.get(`/locations/neighborhoods/${districtId}`);
@@ -358,7 +351,6 @@ export const IlanVer: React.FC = () => {
             {mainType === 'vehicle' ? (
               <div className="pt-3 border-t space-y-3">
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Araç Türü */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Araç Türü</label>
                     <select
@@ -375,7 +367,6 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka (Veritabanındaki 40+ Marka) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
@@ -392,7 +383,6 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Seri */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Seri</label>
                     <select
@@ -409,7 +399,6 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Paket & Motor */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Paket & Motor</label>
                     <select
@@ -460,7 +449,6 @@ export const IlanVer: React.FC = () => {
               </div>
             )}
 
-            {/* Lokasyon: İl - İlçe - Mahalle */}
             <div className="pt-4 border-t grid grid-cols-3 gap-3">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
@@ -768,3 +756,6 @@ export const IlanVer: React.FC = () => {
     </div>
   );
 };
+
+// CreateListingPage için doğrudan IlanVer'i dışa aktar
+export const CreateListingPage = IlanVer;

@@ -31,7 +31,7 @@ interface DropdownItem {
   name: string;
 }
 
-export const CreateListingPage: React.FC = () => {
+export const IlanVer: React.FC = () => {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -47,10 +47,9 @@ export const CreateListingPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dbCategoryId, setDbCategoryId] = useState<string>('');
 
-  // Tür: 'vehicle' | 'realestate'
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
-  // Vasıta Kategori State'leri (Dinamik API)
+  // Dinamik Araç State'leri
   const [vehicleTypes, setVehicleTypes] = useState<DropdownItem[]>([]);
   const [brands, setBrands] = useState<DropdownItem[]>([]);
   const [seriesList, setSeriesList] = useState<DropdownItem[]>([]);
@@ -61,11 +60,11 @@ export const CreateListingPage: React.FC = () => {
   const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
 
-  // Emlak Kategori
+  // Emlak
   const [realEstateSub, setRealEstateSub] = useState('Konut (Satılık)');
   const [realEstateType, setRealEstateType] = useState('Daire');
 
-  // Lokasyon State'leri (Dinamik API)
+  // Lokasyon State'leri
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
@@ -112,43 +111,34 @@ export const CreateListingPage: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // 1. Sayfa Açıldığında Şehirleri ve Kök Kategorileri Getir
   useEffect(() => {
-    // 81 İli Getir
+    // 81 İli Çek
     api.get('/locations/cities').then((res) => {
       const cityData = res.data?.data || res.data || [];
       if (Array.isArray(cityData) && cityData.length > 0) {
         setCities(cityData);
-        // İlk ili varsayılan seç (örn. Adana veya Ankara)
-        const defCity = cityData.find((c: any) => c.name === 'Ankara') || cityData[0];
-        setSelectedCityId(defCity.id);
-        setSelectedCityName(defCity.name);
-        loadDistricts(defCity.id);
+        const ankara = cityData.find((c: any) => c.name.toLowerCase() === 'ankara') || cityData[0];
+        setSelectedCityId(ankara.id);
+        setSelectedCityName(ankara.name);
+        loadDistricts(ankara.id);
       }
     });
 
-    // Kök kategorileri (Vasıta) alıp altındaki Araç Türlerini (Otomobil, SUV, Ticari) getir
-    api.get('/categories/roots').then((res) => {
-      const rootList = res.data?.data || res.data || [];
-      const vasita = rootList.find((c: any) => c.slug === 'vasita') || rootList[0];
-      if (vasita) {
-        api.get(`/categories/${vasita.id}/subcategories`).then((subRes) => {
-          const vTypes = subRes.data?.data || subRes.data || [];
-          setVehicleTypes(vTypes);
-          if (vTypes.length > 0) {
-            setSelectedVehicleTypeId(vTypes[0].id);
-            loadBrands(vTypes[0].id);
-          }
-        });
+    // Araç Türlerini (Otomobil, SUV, Ticari) Çek
+    api.get('/categories/vehicle-types').then((res) => {
+      const vTypes = res.data?.data || [];
+      setVehicleTypes(vTypes);
+      if (vTypes.length > 0) {
+        setSelectedVehicleTypeId(vTypes[0].id);
+        loadBrands(vTypes[0].id);
       }
     });
   }, []);
 
-  // Araç Türü Değiştiğinde (Otomobil -> Markaları getir)
   const loadBrands = async (vehicleTypeId: string) => {
     try {
       const res = await api.get(`/categories/${vehicleTypeId}/subcategories`);
-      const bList = res.data?.data || res.data || [];
+      const bList = res.data?.data || [];
       setBrands(bList);
       if (bList.length > 0) {
         setSelectedBrandId(bList[0].id);
@@ -160,11 +150,10 @@ export const CreateListingPage: React.FC = () => {
     } catch {}
   };
 
-  // Marka Değiştiğinde (Renault -> Clio, Megane...)
   const loadSeries = async (brandId: string) => {
     try {
       const res = await api.get(`/categories/${brandId}/subcategories`);
-      const sList = res.data?.data || res.data || [];
+      const sList = res.data?.data || [];
       setSeriesList(sList);
       if (sList.length > 0) {
         setSelectedSeriesId(sList[0].id);
@@ -175,11 +164,10 @@ export const CreateListingPage: React.FC = () => {
     } catch {}
   };
 
-  // Seri Değiştiğinde (Clio -> Paketleri ve motorları getir)
   const loadPackages = async (seriesId: string) => {
     try {
       const res = await api.get(`/categories/${seriesId}/subcategories`);
-      const pList = res.data?.data || res.data || [];
+      const pList = res.data?.data || [];
       setPackages(pList);
       if (pList.length > 0) {
         setSelectedPackageId(pList[0].id);
@@ -190,11 +178,10 @@ export const CreateListingPage: React.FC = () => {
     } catch {}
   };
 
-  // İL Değişimi
   const loadDistricts = async (cityId: string) => {
     try {
       const res = await api.get(`/locations/districts/${cityId}`);
-      const dList = res.data?.data || res.data || [];
+      const dList = res.data?.data || [];
       setDistricts(dList);
       if (dList.length > 0) {
         setSelectedDistrictId(dList[0].id);
@@ -206,11 +193,10 @@ export const CreateListingPage: React.FC = () => {
     } catch {}
   };
 
-  // İLÇE Değişimi
   const loadNeighborhoods = async (districtId: string) => {
     try {
       const res = await api.get(`/locations/neighborhoods/${districtId}`);
-      const nList = res.data?.data || res.data || [];
+      const nList = res.data?.data || [];
       setNeighborhoods(nList);
       if (nList.length > 0) {
         setSelectedNeighborhoodName(nList[0].name);
@@ -365,7 +351,6 @@ export const CreateListingPage: React.FC = () => {
             {mainType === 'vehicle' ? (
               <div className="pt-3 border-t space-y-3">
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Araç Türü */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Araç Türü</label>
                     <select
@@ -382,7 +367,6 @@ export const CreateListingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka (Veritabanından 40+ Marka) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
@@ -399,7 +383,6 @@ export const CreateListingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Seri */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Seri</label>
                     <select
@@ -416,7 +399,6 @@ export const CreateListingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Paket & Motor */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Paket & Motor</label>
                     <select
@@ -467,7 +449,6 @@ export const CreateListingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Lokasyon: İl - İlçe - Mahalle */}
             <div className="pt-4 border-t grid grid-cols-3 gap-3">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
@@ -775,3 +756,6 @@ export const CreateListingPage: React.FC = () => {
     </div>
   );
 };
+
+// CreateListingPage için doğrudan IlanVer'i dışa aktar
+export const CreateListingPage = IlanVer;
