@@ -88,6 +88,31 @@ public class CategoriesController : ControllerBase
 
         return Ok(result);
     }
+    [HttpGet("vehicle-metadata-tree")]
+    public async Task<IActionResult> GetVehicleMetadataTree()
+    {
+        // Vasıta altındaki tüm kategorileri (Marka -> Seri -> Paket/Motor) tek seferde döner
+        var vasita = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
+        if (vasita == null) return Ok(new { success = true, data = new List<object>() });
+
+        var allVehicleCategories = await _context.Categories
+            .Where(c => !c.IsDeleted)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.Slug,
+                c.ParentCategoryId,
+                c.DefaultFuelType,
+                c.DefaultTransmission,
+                c.DefaultEngineCapacityCc,
+                c.DefaultEnginePowerHp,
+                c.IsLeaf
+            })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = allVehicleCategories });
+    }
 
     [HttpGet("filter-options")]
     public async Task<IActionResult> GetFilterOptions()
