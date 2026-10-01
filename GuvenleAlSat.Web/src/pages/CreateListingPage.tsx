@@ -19,52 +19,6 @@ const PART_NAMES_TR: Record<string, string> = {
   rearRightDoor: 'Sağ Arka Kapı',
 };
 
-const VEHICLE_HIERARCHY: Record<string, Record<string, Record<string, string[]>>> = {
-  Otomobil: {
-    Renault: {
-      Clio: ['1.0 TCe Touch', '1.0 TCe Joy', '1.5 dCi Touch', '1.3 TCe Icon'],
-      Megane: ['1.3 TCe Joy', '1.3 TCe Touch', '1.5 Blue dCi Icon']
-    },
-    Volkswagen: {
-      Golf: ['1.0 eTSI Life', '1.5 eTSI Style', '1.5 eTSI R-Line', '1.6 TDI Comfortline'],
-      Passat: ['1.5 TSI Elegance', '1.5 TSI Business', '2.0 TDI Elegance']
-    },
-    Fiat: {
-      Egea: ['1.4 Fire Easy', '1.3 Multijet Urban', '1.6 Multijet Lounge', '1.5 T4 Hibrit']
-    }
-  },
-  'Arazi, SUV & Pickup': {
-    Dacia: {
-      Duster: ['1.0 TCe Comfort', '1.3 TCe Prestige 4x4', '1.5 dCi Laureate 4x4', '1.5 Blue dCi Journey 4x4'],
-      Sandero_Stepway: ['1.0 TCe Comfort', '1.0 TCe Prestige']
-    },
-    Nissan: {
-      Qashqai: ['1.3 DIG-T Tekna', '1.3 DIG-T Platinum Premium', '1.5 e-Power Design']
-    },
-    Peugeot: {
-      '3008': ['1.2 PureTech Allure', '1.5 BlueHDi GT'],
-      '2008': ['1.2 PureTech Active', '1.5 BlueHDi Allure']
-    },
-    Volkswagen: {
-      Tiguan: ['1.5 TSI Elegance', '1.5 TSI R-Line', '2.0 TDI Elegance 4Motion']
-    }
-  },
-  'Kamyonet & Hafif Ticari': {
-    Ford: {
-      Tourneo_Courier: ['1.5 TDCi Titanium', '1.5 TDCi Trend', '1.0 EcoBoost Titanium'],
-      Transit: ['350 M Van', '350 L Kamyonet']
-    },
-    Fiat: {
-      Doblo: ['1.3 Multijet Easy', '1.6 Multijet Premio Plus'],
-      Fiorino: ['1.3 Multijet Pop', '1.3 Multijet Premio']
-    },
-    Volkswagen: {
-      Caddy: ['2.0 TDI Life', '2.0 TDI Style'],
-      Transporter: ['2.0 TDI City Van', '2.0 TDI Panelvan']
-    }
-  }
-};
-
 const REAL_ESTATE_HIERARCHY: Record<string, string[]> = {
   'Konut (Satılık)': ['Daire', 'Villa', 'Müstakil Ev', 'Rezidans'],
   'Konut (Kiralık)': ['Daire', 'Villa', 'Rezidans'],
@@ -72,10 +26,14 @@ const REAL_ESTATE_HIERARCHY: Record<string, string[]> = {
   'Arsa': ['İmarlı - Konut', 'İmarlı - Ticari', 'Tarla']
 };
 
+interface DropdownItem {
+  id: string;
+  name: string;
+}
+
 export const CreateListingPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // KULLANICI TİPİ VE FOTOĞRAF KOTASI KONTROLÜ
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isCorporate =
     user?.userType === 'Corporate' ||
@@ -92,23 +50,31 @@ export const CreateListingPage: React.FC = () => {
   // Tür: 'vehicle' | 'realestate'
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
-  // Vasıta Kategori
-  const [vehicleSub, setVehicleSub] = useState('Otomobil');
-  const [vehicleBrand, setVehicleBrand] = useState('Renault');
-  const [vehicleSeries, setVehicleSeries] = useState('Clio');
-  const [vehiclePackage, setVehiclePackage] = useState('1.0 TCe Touch');
+  // Vasıta Kategori State'leri (Dinamik API)
+  const [vehicleTypes, setVehicleTypes] = useState<DropdownItem[]>([]);
+  const [brands, setBrands] = useState<DropdownItem[]>([]);
+  const [seriesList, setSeriesList] = useState<DropdownItem[]>([]);
+  const [packages, setPackages] = useState<DropdownItem[]>([]);
+
+  const [selectedVehicleTypeId, setSelectedVehicleTypeId] = useState<string>('');
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('');
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+  const [selectedPackageId, setSelectedPackageId] = useState<string>('');
 
   // Emlak Kategori
   const [realEstateSub, setRealEstateSub] = useState('Konut (Satılık)');
   const [realEstateType, setRealEstateType] = useState('Daire');
 
-  // Lokasyon
+  // Lokasyon State'leri (Dinamik API)
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
-  const [selectedCity, setSelectedCity] = useState('Ankara');
-  const [selectedDistrict, setSelectedDistrict] = useState('Çankaya');
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState('Cumhuriyet Mah.');
+
+  const [selectedCityId, setSelectedCityId] = useState<string>('');
+  const [selectedCityName, setSelectedCityName] = useState<string>('');
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string>('');
+  const [selectedDistrictName, setSelectedDistrictName] = useState<string>('');
+  const [selectedNeighborhoodName, setSelectedNeighborhoodName] = useState<string>('');
 
   // Vasıta Özellikleri
   const [year, setYear] = useState('2020');
@@ -146,69 +112,110 @@ export const CreateListingPage: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Veritabanındaki geçerli kök kategori GUID'ini al (500 Foreign Key hatasını önler)
+  // 1. Sayfa Açıldığında Şehirleri ve Kök Kategorileri Getir
   useEffect(() => {
-    api.get('/categories/roots')
-      .then((res) => {
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setDbCategoryId(res.data.data[0].id);
-        }
-      })
-      .catch(() => {});
-
+    // 81 İli Getir
     api.get('/locations/cities').then((res) => {
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setCities(res.data.data);
-      } else {
-        setCities([
-          { id: '1', name: 'Ankara' },
-          { id: '2', name: 'İstanbul' },
-          { id: '3', name: 'İzmir' },
-          { id: '4', name: 'Bursa' }
-        ]);
+      const cityData = res.data?.data || res.data || [];
+      if (Array.isArray(cityData) && cityData.length > 0) {
+        setCities(cityData);
+        // İlk ili varsayılan seç (örn. Adana veya Ankara)
+        const defCity = cityData.find((c: any) => c.name === 'Ankara') || cityData[0];
+        setSelectedCityId(defCity.id);
+        setSelectedCityName(defCity.name);
+        loadDistricts(defCity.id);
       }
     });
 
-    handleCityChange('Ankara');
+    // Kök kategorileri (Vasıta) alıp altındaki Araç Türlerini (Otomobil, SUV, Ticari) getir
+    api.get('/categories/roots').then((res) => {
+      const rootList = res.data?.data || res.data || [];
+      const vasita = rootList.find((c: any) => c.slug === 'vasita') || rootList[0];
+      if (vasita) {
+        api.get(`/categories/${vasita.id}/subcategories`).then((subRes) => {
+          const vTypes = subRes.data?.data || subRes.data || [];
+          setVehicleTypes(vTypes);
+          if (vTypes.length > 0) {
+            setSelectedVehicleTypeId(vTypes[0].id);
+            loadBrands(vTypes[0].id);
+          }
+        });
+      }
+    });
   }, []);
 
-  const handleCityChange = async (cityName: string) => {
-    setSelectedCity(cityName);
-    setSelectedDistrict('');
-    setSelectedNeighborhood('');
-
-    const foundCity = cities.find((c) => c.name === cityName);
-    if (foundCity?.id) {
-      try {
-        const res = await api.get(`/locations/districts/${foundCity.id}`);
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setDistricts(res.data.data);
-          setSelectedDistrict(res.data.data[0].name);
-          handleDistrictChange(res.data.data[0].name);
-          return;
-        }
-      } catch {}
-    }
-    const defaultDistricts = [
-      { id: 'd1', name: 'Çankaya' },
-      { id: 'd2', name: 'Yenimahalle' },
-      { id: 'd3', name: 'Keçiören' },
-      { id: 'd4', name: 'Beypazarı' }
-    ];
-    setDistricts(defaultDistricts);
-    setSelectedDistrict(defaultDistricts[0].name);
-    handleDistrictChange(defaultDistricts[0].name);
+  // Araç Türü Değiştiğinde (Otomobil -> Markaları getir)
+  const loadBrands = async (vehicleTypeId: string) => {
+    try {
+      const res = await api.get(`/categories/${vehicleTypeId}/subcategories`);
+      const bList = res.data?.data || res.data || [];
+      setBrands(bList);
+      if (bList.length > 0) {
+        setSelectedBrandId(bList[0].id);
+        loadSeries(bList[0].id);
+      } else {
+        setSeriesList([]);
+        setPackages([]);
+      }
+    } catch {}
   };
 
-  const handleDistrictChange = async (districtName: string) => {
-    setSelectedDistrict(districtName);
-    const defNeighborhoods = [
-      { id: 'n1', name: 'Cumhuriyet Mah.' },
-      { id: 'n2', name: 'Atatürk Mah.' },
-      { id: 'n3', name: 'Fatih Mah.' }
-    ];
-    setNeighborhoods(defNeighborhoods);
-    setSelectedNeighborhood(defNeighborhoods[0].name);
+  // Marka Değiştiğinde (Renault -> Clio, Megane...)
+  const loadSeries = async (brandId: string) => {
+    try {
+      const res = await api.get(`/categories/${brandId}/subcategories`);
+      const sList = res.data?.data || res.data || [];
+      setSeriesList(sList);
+      if (sList.length > 0) {
+        setSelectedSeriesId(sList[0].id);
+        loadPackages(sList[0].id);
+      } else {
+        setPackages([]);
+      }
+    } catch {}
+  };
+
+  // Seri Değiştiğinde (Clio -> Paketleri ve motorları getir)
+  const loadPackages = async (seriesId: string) => {
+    try {
+      const res = await api.get(`/categories/${seriesId}/subcategories`);
+      const pList = res.data?.data || res.data || [];
+      setPackages(pList);
+      if (pList.length > 0) {
+        setSelectedPackageId(pList[0].id);
+        setDbCategoryId(pList[0].id);
+      } else {
+        setDbCategoryId(seriesId);
+      }
+    } catch {}
+  };
+
+  // İL Değişimi
+  const loadDistricts = async (cityId: string) => {
+    try {
+      const res = await api.get(`/locations/districts/${cityId}`);
+      const dList = res.data?.data || res.data || [];
+      setDistricts(dList);
+      if (dList.length > 0) {
+        setSelectedDistrictId(dList[0].id);
+        setSelectedDistrictName(dList[0].name);
+        loadNeighborhoods(dList[0].id);
+      } else {
+        setNeighborhoods([]);
+      }
+    } catch {}
+  };
+
+  // İLÇE Değişimi
+  const loadNeighborhoods = async (districtId: string) => {
+    try {
+      const res = await api.get(`/locations/neighborhoods/${districtId}`);
+      const nList = res.data?.data || res.data || [];
+      setNeighborhoods(nList);
+      if (nList.length > 0) {
+        setSelectedNeighborhoodName(nList[0].name);
+      }
+    } catch {}
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,7 +245,7 @@ export const CreateListingPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !price || !selectedCity) {
+    if (!title.trim() || !price || !selectedCityName) {
       alert('Lütfen başlık, fiyat ve şehir alanlarını doldurunuz.');
       return;
     }
@@ -251,18 +258,17 @@ export const CreateListingPage: React.FC = () => {
         displayOrder: idx + 1
       }));
 
-      // Veritabanındaki ilk kategori GUID'ini veya geçerli fallback GUID kullan:
-      const categoryIdToSend = dbCategoryId || '11111111-1111-1111-1111-111111111111';
+      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedSeriesId || '11111111-1111-1111-1111-111111111111';
 
       const payload: any = {
         categoryId: categoryIdToSend,
         title: title.trim(),
         description: description.trim() || 'Açıklama belirtilmedi.',
         price: Number(price),
-        currency: 0, // TRY
-        city: selectedCity,
-        district: selectedDistrict || 'Merkez',
-        neighborhood: selectedNeighborhood || 'Cumhuriyet Mah.',
+        currency: 0,
+        city: selectedCityName,
+        district: selectedDistrictName || 'Merkez',
+        neighborhood: selectedNeighborhoodName || 'Merkez Mah.',
         images: cleanImages
       };
 
@@ -315,7 +321,7 @@ export const CreateListingPage: React.FC = () => {
       <div className="flex justify-between items-center bg-white p-4 border rounded mb-6">
         <div className={`flex items-center gap-2 font-bold ${step === 1 ? 'text-[#0055b8]' : 'text-gray-400'}`}>
           <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">1</span>
-          Kategori Seçimi
+          Kategori & Konum Seçimi
         </div>
         <div className={`flex items-center gap-2 font-bold ${step === 2 ? 'text-[#0055b8]' : 'text-gray-400'}`}>
           <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">2</span>
@@ -341,7 +347,7 @@ export const CreateListingPage: React.FC = () => {
                 }`}
               >
                 <Car className="w-6 h-6" />
-                <span>Vasıta (Otomobil, SUV, Kamyonet)</span>
+                <span>Vasıta (Otomobil, SUV, Ticari)</span>
               </button>
 
               <button
@@ -359,69 +365,70 @@ export const CreateListingPage: React.FC = () => {
             {mainType === 'vehicle' ? (
               <div className="pt-3 border-t space-y-3">
                 <div className="grid grid-cols-4 gap-3">
+                  {/* Araç Türü */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Araç Türü</label>
                     <select
                       className="w-full border p-2 rounded bg-white"
-                      value={vehicleSub}
+                      value={selectedVehicleTypeId}
                       onChange={(e) => {
-                        setVehicleSub(e.target.value);
-                        const firstBrand = Object.keys(VEHICLE_HIERARCHY[e.target.value] || {})[0] || '';
-                        setVehicleBrand(firstBrand);
-                        const firstSeries = Object.keys(VEHICLE_HIERARCHY[e.target.value]?.[firstBrand] || {})[0] || '';
-                        setVehicleSeries(firstSeries);
-                        setVehiclePackage(VEHICLE_HIERARCHY[e.target.value]?.[firstBrand]?.[firstSeries]?.[0] || '');
+                        setSelectedVehicleTypeId(e.target.value);
+                        loadBrands(e.target.value);
                       }}
                     >
-                      <option value="Otomobil">Otomobil</option>
-                      <option value="Arazi, SUV & Pickup">Arazi, SUV & Pickup</option>
-                      <option value="Kamyonet & Hafif Ticari">Kamyonet & Hafif Ticari</option>
+                      {vehicleTypes.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
                     </select>
                   </div>
 
+                  {/* Marka (Veritabanından 40+ Marka) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
                       className="w-full border p-2 rounded bg-white"
-                      value={vehicleBrand}
+                      value={selectedBrandId}
                       onChange={(e) => {
-                        setVehicleBrand(e.target.value);
-                        const firstSeries = Object.keys(VEHICLE_HIERARCHY[vehicleSub]?.[e.target.value] || {})[0] || '';
-                        setVehicleSeries(firstSeries);
-                        setVehiclePackage(VEHICLE_HIERARCHY[vehicleSub]?.[e.target.value]?.[firstSeries]?.[0] || '');
+                        setSelectedBrandId(e.target.value);
+                        loadSeries(e.target.value);
                       }}
                     >
-                      {Object.keys(VEHICLE_HIERARCHY[vehicleSub] || {}).map((b) => (
-                        <option key={b} value={b}>{b}</option>
+                      {brands.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
                   </div>
 
+                  {/* Seri */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Seri</label>
                     <select
                       className="w-full border p-2 rounded bg-white"
-                      value={vehicleSeries}
+                      value={selectedSeriesId}
                       onChange={(e) => {
-                        setVehicleSeries(e.target.value);
-                        setVehiclePackage(VEHICLE_HIERARCHY[vehicleSub]?.[vehicleBrand]?.[e.target.value]?.[0] || '');
+                        setSelectedSeriesId(e.target.value);
+                        loadPackages(e.target.value);
                       }}
                     >
-                      {Object.keys(VEHICLE_HIERARCHY[vehicleSub]?.[vehicleBrand] || {}).map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                      {seriesList.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
                   </div>
 
+                  {/* Paket & Motor */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Paket & Motor</label>
                     <select
                       className="w-full border p-2 rounded bg-white"
-                      value={vehiclePackage}
-                      onChange={(e) => setVehiclePackage(e.target.value)}
+                      value={selectedPackageId}
+                      onChange={(e) => {
+                        setSelectedPackageId(e.target.value);
+                        setDbCategoryId(e.target.value);
+                      }}
                     >
-                      {(VEHICLE_HIERARCHY[vehicleSub]?.[vehicleBrand]?.[vehicleSeries] || []).map((p) => (
-                        <option key={p} value={p}>{p}</option>
+                      {packages.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
                   </div>
@@ -460,17 +467,23 @@ export const CreateListingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Lokasyon */}
+            {/* Lokasyon: İl - İlçe - Mahalle */}
             <div className="pt-4 border-t grid grid-cols-3 gap-3">
               <div>
-                <label className="block font-bold text-gray-700 mb-1">İl</label>
+                <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
                 <select
                   className="w-full border p-2 rounded bg-white"
-                  value={selectedCity}
-                  onChange={(e) => handleCityChange(e.target.value)}
+                  value={selectedCityId}
+                  onChange={(e) => {
+                    const cId = e.target.value;
+                    setSelectedCityId(cId);
+                    const cObj = cities.find((c) => c.id === cId);
+                    setSelectedCityName(cObj?.name || '');
+                    loadDistricts(cId);
+                  }}
                 >
                   {cities.map((c) => (
-                    <option key={c.id || c.name} value={c.name}>{c.name}</option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -479,11 +492,17 @@ export const CreateListingPage: React.FC = () => {
                 <label className="block font-bold text-gray-700 mb-1">İlçe</label>
                 <select
                   className="w-full border p-2 rounded bg-white"
-                  value={selectedDistrict}
-                  onChange={(e) => handleDistrictChange(e.target.value)}
+                  value={selectedDistrictId}
+                  onChange={(e) => {
+                    const dId = e.target.value;
+                    setSelectedDistrictId(dId);
+                    const dObj = districts.find((d) => d.id === dId);
+                    setSelectedDistrictName(dObj?.name || '');
+                    loadNeighborhoods(dId);
+                  }}
                 >
                   {districts.map((d) => (
-                    <option key={d.id || d.name} value={d.name}>{d.name}</option>
+                    <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
               </div>
@@ -492,11 +511,11 @@ export const CreateListingPage: React.FC = () => {
                 <label className="block font-bold text-gray-700 mb-1">Mahalle</label>
                 <select
                   className="w-full border p-2 rounded bg-white"
-                  value={selectedNeighborhood}
-                  onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                  value={selectedNeighborhoodName}
+                  onChange={(e) => setSelectedNeighborhoodName(e.target.value)}
                 >
                   {neighborhoods.map((n) => (
-                    <option key={n.id || n.name} value={n.name}>{n.name}</option>
+                    <option key={n.id} value={n.name}>{n.name}</option>
                   ))}
                 </select>
               </div>
@@ -703,7 +722,6 @@ export const CreateListingPage: React.FC = () => {
               />
             </div>
 
-            {/* FOTOĞRAFLAR (GALERİYE 20, STANDARDA 10 AYRIMI) */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="font-bold text-gray-700">Fotoğraflar ({images.length} / {maxPhotos})</label>
