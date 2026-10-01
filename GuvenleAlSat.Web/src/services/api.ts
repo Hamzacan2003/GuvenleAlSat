@@ -1,7 +1,29 @@
 import axios from 'axios';
 
-// Vercel'de tanımlayacağımız ortam değişkeni yoksa yerel adrese gider:
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5121/api';
+// Canlı ortamda Vercel ortam değişkenini alır, yoksa canlı Render API adresine gider:
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'https://guvenlealsat-api.onrender.com/api';
+
+// Görsellerin Render üzerinden veya göreceli yoldan güvenle yüklenmesini sağlayan yardımcı
+export const getFullImageUrl = (url?: string): string => {
+  if (!url) return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=60';
+  
+  // Eğer zaten tam bir https/http URL'si ise
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // Localhost veya dahili IP kalmışsa canlı Render adresine çevir
+    if (url.includes('localhost') || url.includes('127.0.0.1')) {
+      const parts = url.split('/uploads/');
+      if (parts.length > 1) {
+        return `https://guvenlealsat-api.onrender.com/uploads/${parts[1]}`;
+      }
+    }
+    return url;
+  }
+
+  // Göreceli yol (/uploads/resim.jpg) ise Render kök adresini ekle
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `https://guvenlealsat-api.onrender.com${cleanPath}`;
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -69,7 +91,8 @@ api.interceptors.response.use(
       }
 
       try {
-        const response = await axios.post('http://localhost:5121/api/Auth/refresh-token', {
+        // Dinamik API_BASE_URL kullanarak refresh-token isteği at
+        const response = await axios.post(`${API_BASE_URL}/Auth/refresh-token`, {
           refreshToken: refreshToken,
         });
 
