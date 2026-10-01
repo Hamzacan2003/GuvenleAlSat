@@ -36,25 +36,48 @@ public class CategoriesController : ControllerBase
         var subs = await _context.Categories
             .Where(c => c.ParentCategoryId == parentId && !c.IsDeleted)
             .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
-            .Select(c => new { c.Id, c.Name, c.Slug, c.IsLeaf })
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.Slug,
+                c.IsLeaf,
+                c.DefaultFuelType,
+                c.DefaultTransmission,
+                c.DefaultEngineCapacityCc,
+                c.DefaultEnginePowerHp,
+                c.DefaultBodyType
+            })
             .ToListAsync();
 
         return Ok(new { success = true, data = subs });
     }
 
-    [HttpGet("vehicle-types")]
-    public async Task<IActionResult> GetVehicleTypes()
+    // Doğrudan Araç Kategori Ağacı (Otomobil, SUV, Ticari ve altındaki 40+ Marka)
+    [HttpGet("vehicle-tree")]
+    public async Task<IActionResult> GetVehicleTree()
     {
         var vasita = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
         if (vasita == null) return Ok(new { success = true, data = new List<object>() });
 
-        var types = await _context.Categories
-            .Where(c => c.ParentCategoryId == vasita.Id && !c.IsDeleted)
-            .OrderBy(c => c.DisplayOrder)
-            .Select(c => new { c.Id, c.Name, c.Slug })
+        var categories = await _context.Categories
+            .Where(c => !c.IsDeleted)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.Slug,
+                c.ParentCategoryId,
+                c.IsLeaf,
+                c.DefaultFuelType,
+                c.DefaultTransmission,
+                c.DefaultEngineCapacityCc,
+                c.DefaultEnginePowerHp,
+                c.DefaultBodyType
+            })
             .ToListAsync();
 
-        return Ok(new { success = true, data = types });
+        return Ok(new { success = true, data = categories });
     }
 
     [HttpGet("by-slug/{slug}/subcategories")]
@@ -87,31 +110,6 @@ public class CategoriesController : ControllerBase
             return BadRequest(result);
 
         return Ok(result);
-    }
-    [HttpGet("vehicle-metadata-tree")]
-    public async Task<IActionResult> GetVehicleMetadataTree()
-    {
-        // Vasıta altındaki tüm kategorileri (Marka -> Seri -> Paket/Motor) tek seferde döner
-        var vasita = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
-        if (vasita == null) return Ok(new { success = true, data = new List<object>() });
-
-        var allVehicleCategories = await _context.Categories
-            .Where(c => !c.IsDeleted)
-            .Select(c => new
-            {
-                c.Id,
-                c.Name,
-                c.Slug,
-                c.ParentCategoryId,
-                c.DefaultFuelType,
-                c.DefaultTransmission,
-                c.DefaultEngineCapacityCc,
-                c.DefaultEnginePowerHp,
-                c.IsLeaf
-            })
-            .ToListAsync();
-
-        return Ok(new { success = true, data = allVehicleCategories });
     }
 
     [HttpGet("filter-options")]

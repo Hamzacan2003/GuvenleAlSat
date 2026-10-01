@@ -26,7 +26,7 @@ const REAL_ESTATE_HIERARCHY: Record<string, string[]> = {
   'Arsa': ['İmarlı - Konut', 'İmarlı - Ticari', 'Tarla']
 };
 
-const ENGINE_CAPACITIES = [
+const ENGINE_CAPACITY_OPTIONS = [
   { label: '1.0 altı', value: '999' },
   { label: '1.0', value: '1000' },
   { label: '1.2', value: '1200' },
@@ -59,16 +59,16 @@ export const IlanVer: React.FC = () => {
 
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
-  // --- KATEGORİ VE ARAÇ LİSTELERİ ---
-  const [allCategories, setAllCategories] = useState<any[]>([]);
+  // --- KATEGORİ VE ARAÇ DEV AĞACI (VERİTABANINDAN) ---
+  const [rawCategories, setRawCategories] = useState<any[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [seriesList, setSeriesList] = useState<any[]>([]);
+  const [models, setModels] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
 
   const [selectedVehicleTypeId, setSelectedVehicleTypeId] = useState<string>('');
   const [selectedBrandId, setSelectedBrandId] = useState<string>('');
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string>('');
+  const [selectedModelId, setSelectedModelId] = useState<string>('');
   const [selectedPackageId, setSelectedPackageId] = useState<string>('');
 
   // Emlak
@@ -86,15 +86,15 @@ export const IlanVer: React.FC = () => {
   const [selectedDistrictName, setSelectedDistrictName] = useState<string>('');
   const [selectedNeighborhoodName, setSelectedNeighborhoodName] = useState<string>('');
 
-  // --- ARAÇ DETAYLARI ---
+  // --- ARAÇ DETAY VE MOTOR/VİTES BİLGİLERİ ---
   const [year, setYear] = useState('2022');
   const [kilometer, setKilometer] = useState('');
   const [fuelType, setFuelType] = useState('Benzin');
   const [transmission, setTransmission] = useState('Otomatik');
   const [bodyType, setBodyType] = useState('Sedan');
   const [color, setColor] = useState('Beyaz');
-  const [enginePower, setEnginePower] = useState('130');
   const [engineCapacity, setEngineCapacity] = useState('1498');
+  const [enginePower, setEnginePower] = useState('150');
   const [heavyDamage, setHeavyDamage] = useState(false);
   const [damageReport, setDamageReport] = useState<Record<string, number>>({
     hood: 0, roof: 0, trunkLid: 0, frontBumper: 0, rearBumper: 0,
@@ -115,97 +115,110 @@ export const IlanVer: React.FC = () => {
   const [isFurnished, setIsFurnished] = useState(false);
   const [inSite, setInSite] = useState(false);
 
-  // --- GENEL ---
+  // --- GENEL ALANLAR ---
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // 1. Sayfa Açılışında Tüm Verileri Çek
+  // 1. Sayfa Açıldığında Tüm Şehirleri ve Kategori Ağacını Çek
   useEffect(() => {
     // 81 İli Çek
     api.get('/locations/cities').then((res) => {
-      const data = res.data?.data || res.data || [];
-      if (Array.isArray(data) && data.length > 0) {
-        setCities(data);
-        const ankara = data.find((c: any) => c.name.toLowerCase() === 'ankara') || data[0];
+      const cityData = res.data?.data || res.data || [];
+      if (Array.isArray(cityData) && cityData.length > 0) {
+        setCities(cityData);
+        const ankara = cityData.find((c: any) => c.name.toLowerCase() === 'ankara') || cityData[0];
         setSelectedCityId(ankara.id);
         setSelectedCityName(ankara.name);
         fetchDistricts(ankara.id);
       }
     });
 
-    // Araç Ağacını Tek Seferde Çek
-    api.get('/categories/vehicle-metadata-tree').then((res) => {
-      const data = res.data?.data || res.data || [];
-      if (Array.isArray(data) && data.length > 0) {
-        setAllCategories(data);
+    // Araç Kategori Ağacını Çek
+    api.get('/categories/vehicle-tree').then((res) => {
+      const allCats = res.data?.data || [];
+      if (Array.isArray(allCats) && allCats.length > 0) {
+        setRawCategories(allCats);
 
-        // Vasıta altındaki kök türler (Otomobil, SUV, Kamyonet)
-        const vasita = data.find((c: any) => c.slug === 'vasita');
+        // Kök Araç Türlerini Bul (Otomobil, SUV, Ticari)
+        const vasita = allCats.find((c: any) => c.slug === 'vasita');
         const vTypes = vasita
-          ? data.filter((c: any) => c.parentCategoryId === vasita.id)
-          : data.filter((c: any) => !c.parentCategoryId);
+          ? allCats.filter((c: any) => c.parentCategoryId === vasita.id)
+          : allCats.filter((c: any) => !c.parentCategoryId && c.slug !== 'emlak');
 
         setVehicleTypes(vTypes);
         if (vTypes.length > 0) {
-          setSelectedVehicleTypeId(vTypes[0].id);
-          filterBrands(vTypes[0].id, data);
+          const firstType = vTypes[0];
+          setSelectedVehicleTypeId(firstType.id);
+          populateBrands(firstType.id, allCats);
         }
       }
     });
   }, []);
 
-  // Araç Türü Değişince Markaları Filtrele
-  const filterBrands = (typeId: string, sourceCategories = allCategories) => {
-    const bList = sourceCategories.filter((c: any) => c.parentCategoryId === typeId);
+  // Araç Türü Değişince Markaları Listele
+  const populateBrands = (typeId: string, sourceCats = rawCategories) => {
+    const bList = sourceCats
+      .filter((c: any) => c.parentCategoryId === typeId)
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
     setBrands(bList);
     if (bList.length > 0) {
-      setSelectedBrandId(bList[0].id);
-      filterSeries(bList[0].id, sourceCategories);
+      const firstBrand = bList[0];
+      setSelectedBrandId(firstBrand.id);
+      populateModels(firstBrand.id, sourceCats);
     } else {
-      setSeriesList([]);
+      setModels([]);
       setPackages([]);
     }
   };
 
-  // Marka Değişince Modelleri Filtrele
-  const filterSeries = (brandId: string, sourceCategories = allCategories) => {
-    const sList = sourceCategories.filter((c: any) => c.parentCategoryId === brandId);
-    setSeriesList(sList);
-    if (sList.length > 0) {
-      setSelectedSeriesId(sList[0].id);
-      filterPackages(sList[0].id, sourceCategories);
+  // Marka Değişince Modelleri Listele (Örn: Audi -> A3, A4, Q5...)
+  const populateModels = (brandId: string, sourceCats = rawCategories) => {
+    const mList = sourceCats
+      .filter((c: any) => c.parentCategoryId === brandId)
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+    setModels(mList);
+    if (mList.length > 0) {
+      const firstModel = mList[0];
+      setSelectedModelId(firstModel.id);
+      populatePackages(firstModel.id, sourceCats);
     } else {
       setPackages([]);
     }
   };
 
-  // Model Değişince Paketleri Filtrele & Otomatik Özellik Doldur
-  const filterPackages = (seriesId: string, sourceCategories = allCategories) => {
-    const pList = sourceCategories.filter((c: any) => c.parentCategoryId === seriesId);
+  // Model Değişince Paket & Motor Seçeneklerini Listele
+  const populatePackages = (modelId: string, sourceCats = rawCategories) => {
+    const pList = sourceCats
+      .filter((c: any) => c.parentCategoryId === modelId)
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
     setPackages(pList);
     if (pList.length > 0) {
       const firstPkg = pList[0];
       setSelectedPackageId(firstPkg.id);
       setDbCategoryId(firstPkg.id);
-      applyPreset(firstPkg);
+      applyPresetValues(firstPkg);
     } else {
       setSelectedPackageId('');
-      setDbCategoryId(seriesId);
+      setDbCategoryId(modelId);
     }
   };
 
-  // Paketten Gelen Varsayılan Değerleri Form Alanlarına Otomatik Aktar
-  const applyPreset = (pkg: any) => {
+  // Paketten Gelen Motor Hacmi, Yakıt ve Vitesi Otomatik Uygula
+  const applyPresetValues = (pkg: any) => {
     if (pkg.defaultFuelType) setFuelType(pkg.defaultFuelType);
     if (pkg.defaultTransmission) setTransmission(pkg.defaultTransmission);
+    if (pkg.defaultBodyType) setBodyType(pkg.defaultBodyType);
     if (pkg.defaultEngineCapacityCc) setEngineCapacity(String(pkg.defaultEngineCapacityCc));
     if (pkg.defaultEnginePowerHp) setEnginePower(String(pkg.defaultEnginePowerHp));
   };
 
-  // İlçeleri Çek (Hata durumunda sahte liste BASMAZ, doğrudan API'yi bekler)
+  // İlçeleri Çek
   const fetchDistricts = async (cityId: string) => {
     setDistricts([]);
     setNeighborhoods([]);
@@ -218,9 +231,7 @@ export const IlanVer: React.FC = () => {
         setSelectedDistrictName(list[0].name);
         fetchNeighborhoods(list[0].id);
       }
-    } catch (e) {
-      console.error('İlçeler çekilemedi:', e);
-    }
+    } catch {}
   };
 
   // Mahalleleri Çek
@@ -233,9 +244,7 @@ export const IlanVer: React.FC = () => {
       if (list.length > 0) {
         setSelectedNeighborhoodName(list[0].name);
       }
-    } catch (e) {
-      console.error('Mahalleler çekilemedi:', e);
-    }
+    } catch {}
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,7 +287,7 @@ export const IlanVer: React.FC = () => {
         displayOrder: idx + 1
       }));
 
-      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedSeriesId || '11111111-1111-1111-1111-111111111111';
+      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedModelId || '11111111-1111-1111-1111-111111111111';
 
       const payload: any = {
         categoryId: categoryIdToSend,
@@ -300,8 +309,8 @@ export const IlanVer: React.FC = () => {
           transmission,
           bodyType,
           color,
-          enginePowerHp: Number(enginePower) || 100,
-          engineCapacityCc: Number(engineCapacity) || 1400,
+          enginePowerHp: Number(enginePower) || 120,
+          engineCapacityCc: Number(engineCapacity) || 1500,
           heavyDamageRegistered: heavyDamage
         };
         payload.damageReport = damageReport;
@@ -367,7 +376,7 @@ export const IlanVer: React.FC = () => {
                 }`}
               >
                 <Car className="w-6 h-6" />
-                <span>Vasıta (Otomobil, SUV, Ticari)</span>
+                <span>Vasıta (Otomobil, SUV, Kamyonet)</span>
               </button>
 
               <button
@@ -393,7 +402,7 @@ export const IlanVer: React.FC = () => {
                       value={selectedVehicleTypeId}
                       onChange={(e) => {
                         setSelectedVehicleTypeId(e.target.value);
-                        filterBrands(e.target.value);
+                        populateBrands(e.target.value);
                       }}
                     >
                       {vehicleTypes.map((t) => (
@@ -402,7 +411,7 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka */}
+                  {/* Marka (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
@@ -410,7 +419,7 @@ export const IlanVer: React.FC = () => {
                       value={selectedBrandId}
                       onChange={(e) => {
                         setSelectedBrandId(e.target.value);
-                        filterSeries(e.target.value);
+                        populateModels(e.target.value);
                       }}
                     >
                       {brands.map((b) => (
@@ -419,24 +428,24 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Seri */}
+                  {/* Model / Seri */}
                   <div>
-                    <label className="block font-bold text-gray-700 mb-1">Seri / Model</label>
+                    <label className="block font-bold text-gray-700 mb-1">Model / Seri</label>
                     <select
                       className="w-full border p-2 rounded bg-white"
-                      value={selectedSeriesId}
+                      value={selectedModelId}
                       onChange={(e) => {
-                        setSelectedSeriesId(e.target.value);
-                        filterPackages(e.target.value);
+                        setSelectedModelId(e.target.value);
+                        populatePackages(e.target.value);
                       }}
                     >
-                      {seriesList.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
+                      {models.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Paket & Donanım */}
+                  {/* Donanım Paketi */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Paket & Donanım</label>
                     <select
@@ -446,7 +455,7 @@ export const IlanVer: React.FC = () => {
                         setSelectedPackageId(e.target.value);
                         setDbCategoryId(e.target.value);
                         const sel = packages.find((p) => p.id === e.target.value);
-                        if (sel) applyPreset(sel);
+                        if (sel) applyPresetValues(sel);
                       }}
                     >
                       {packages.map((p) => (
@@ -489,7 +498,7 @@ export const IlanVer: React.FC = () => {
               </div>
             )}
 
-            {/* Lokasyon */}
+            {/* Lokasyon (81 İl, Tüm İlçeler ve Geniş Mahalleler) */}
             <div className="pt-4 border-t grid grid-cols-3 gap-3">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
@@ -559,12 +568,12 @@ export const IlanVer: React.FC = () => {
           <div className="space-y-4">
             {mainType === 'vehicle' ? (
               <>
-                <h2 className="font-bold text-sm text-gray-900 border-b pb-2">2. Adım: Motor, Vites ve Ekspertiz Seçimi</h2>
+                <h2 className="font-bold text-sm text-gray-900 border-b pb-2">2. Adım: Motor, Yıl, Vites ve Ekspertiz Seçimi</h2>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Model Yılı</label>
                     <select className="w-full border p-2 rounded bg-white" value={year} onChange={(e) => setYear(e.target.value)}>
-                      {Array.from({ length: 35 }, (_, i) => 2026 - i).map((y) => (
+                      {Array.from({ length: 40 }, (_, i) => 2026 - i).map((y) => (
                         <option key={y} value={y}>{y}</option>
                       ))}
                     </select>
@@ -594,14 +603,14 @@ export const IlanVer: React.FC = () => {
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Motor Hacmi</label>
                     <select className="w-full border p-2 rounded bg-white" value={engineCapacity} onChange={(e) => setEngineCapacity(e.target.value)}>
-                      {ENGINE_CAPACITIES.map((ec) => (
+                      {ENGINE_CAPACITY_OPTIONS.map((ec) => (
                         <option key={ec.value} value={ec.value}>{ec.label}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Motor Gücü (HP)</label>
-                    <input type="number" placeholder="Örn: 130" className="w-full border p-2 rounded" value={enginePower} onChange={(e) => setEnginePower(e.target.value)} />
+                    <input type="number" placeholder="Örn: 150" className="w-full border p-2 rounded" value={enginePower} onChange={(e) => setEnginePower(e.target.value)} />
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Kasa Tipi</label>
