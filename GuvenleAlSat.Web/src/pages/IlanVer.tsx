@@ -41,7 +41,7 @@ const ENGINE_CAPACITY_OPTIONS = [
   { label: 'Elektrikli (0 cc)', value: '0' }
 ];
 
-export const IlanVer: React.FC = () => {
+export const CreateListingPage: React.FC = () => {
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -60,7 +60,7 @@ export const IlanVer: React.FC = () => {
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
   // --- KATEGORİ VE ARAÇ DEV AĞACI (VERİTABANINDAN) ---
-  const [rawCategories, setRawCategories] = useState<any[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
@@ -86,7 +86,7 @@ export const IlanVer: React.FC = () => {
   const [selectedDistrictName, setSelectedDistrictName] = useState<string>('');
   const [selectedNeighborhoodName, setSelectedNeighborhoodName] = useState<string>('');
 
-  // --- ARAÇ DETAY VE MOTOR/VİTES BİLGİLERİ ---
+  // --- ARAÇ DETAYLARI (2. ADIM) ---
   const [year, setYear] = useState('2022');
   const [kilometer, setKilometer] = useState('');
   const [fuelType, setFuelType] = useState('Benzin');
@@ -122,7 +122,7 @@ export const IlanVer: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // 1. Sayfa Açıldığında Tüm Şehirleri ve Kategori Ağacını Çek
+  // 1. Sayfa Açıldığında Tüm Şehirleri ve Kategori Kataloğunu Çek
   useEffect(() => {
     // 81 İli Çek
     api.get('/locations/cities').then((res) => {
@@ -136,81 +136,84 @@ export const IlanVer: React.FC = () => {
       }
     });
 
-    // Araç Kategori Ağacını Çek
-    api.get('/categories/vehicle-tree').then((res) => {
-      const allCats = res.data?.data || [];
-      if (Array.isArray(allCats) && allCats.length > 0) {
-        setRawCategories(allCats);
+    // Araç Kataloğunu Çek (Doğrudan vehicle-catalog endpoint'i)
+    api.get('/categories/vehicle-catalog').then((res) => {
+      const data = res.data?.data || [];
+      console.log('ARAÇ KATALOĞU ÇEKİLDİ:', data.length, 'adet kayıt');
+      if (Array.isArray(data) && data.length > 0) {
+        setAllCategories(data);
 
-        // Kök Araç Türlerini Bul (Otomobil, SUV, Ticari)
-        const vasita = allCats.find((c: any) => c.slug === 'vasita');
+        // Vasıta altındaki 2. Seviye Araç Türleri (Otomobil, SUV, Kamyonet)
+        const vasita = data.find((c: any) => c.slug === 'vasita');
         const vTypes = vasita
-          ? allCats.filter((c: any) => c.parentCategoryId === vasita.id)
-          : allCats.filter((c: any) => !c.parentCategoryId && c.slug !== 'emlak');
+          ? data.filter((c: any) => c.parentCategoryId === vasita.id)
+          : data.filter((c: any) => !c.parentCategoryId && c.slug !== 'emlak');
 
         setVehicleTypes(vTypes);
         if (vTypes.length > 0) {
           const firstType = vTypes[0];
           setSelectedVehicleTypeId(firstType.id);
-          populateBrands(firstType.id, allCats);
+          buildBrands(firstType.id, data);
         }
       }
+    }).catch((err) => {
+      console.error('vehicle-catalog çağrı hatası:', err);
     });
   }, []);
 
-  // Araç Türü Değişince Markaları Listele
-  const populateBrands = (typeId: string, sourceCats = rawCategories) => {
+  // Araç Türü Değişince Markaları Kur (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...)
+  const buildBrands = (typeId: string, sourceCats = allCategories) => {
     const bList = sourceCats
       .filter((c: any) => c.parentCategoryId === typeId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
 
     setBrands(bList);
     if (bList.length > 0) {
-      const firstBrand = bList[0];
-      setSelectedBrandId(firstBrand.id);
-      populateModels(firstBrand.id, sourceCats);
+      const firstB = bList[0];
+      setSelectedBrandId(firstB.id);
+      buildModels(firstB.id, sourceCats);
     } else {
       setModels([]);
       setPackages([]);
     }
   };
 
-  // Marka Değişince Modelleri Listele (Örn: Audi -> A3, A4, Q5...)
-  const populateModels = (brandId: string, sourceCats = rawCategories) => {
+  // Marka Değişince Modelleri Kur (Örn: Renault -> Clio, Megane, Toros...)
+  const buildModels = (brandId: string, sourceCats = allCategories) => {
     const mList = sourceCats
       .filter((c: any) => c.parentCategoryId === brandId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
 
     setModels(mList);
     if (mList.length > 0) {
-      const firstModel = mList[0];
-      setSelectedModelId(firstModel.id);
-      populatePackages(firstModel.id, sourceCats);
+      const firstM = mList[0];
+      setSelectedModelId(firstM.id);
+      buildPackages(firstM.id, sourceCats);
     } else {
       setPackages([]);
     }
   };
 
-  // Model Değişince Paket & Motor Seçeneklerini Listele
-  const populatePackages = (modelId: string, sourceCats = rawCategories) => {
+  // Model Değişince Donanım Paketlerini Kur
+  const buildPackages = (modelId: string, sourceCats = allCategories) => {
     const pList = sourceCats
       .filter((c: any) => c.parentCategoryId === modelId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
 
     setPackages(pList);
     if (pList.length > 0) {
-      const firstPkg = pList[0];
-      setSelectedPackageId(firstPkg.id);
-      setDbCategoryId(firstPkg.id);
-      applyPresetValues(firstPkg);
+      const firstP = pList[0];
+      setSelectedPackageId(firstP.id);
+      setDbCategoryId(firstP.id);
+      syncVehicleDefaults(firstP);
     } else {
       setSelectedPackageId('');
       setDbCategoryId(modelId);
     }
   };
 
-  // Paketten Gelen Motor Hacmi, Yakıt ve Vitesi Otomatik Uygula
-  const applyPresetValues = (pkg: any) => {
+  // Paketten Gelen Motor Hacmi, Yakıt ve Vites Değerlerini Form Alanına Ön Doldur
+  const syncVehicleDefaults = (pkg: any) => {
     if (pkg.defaultFuelType) setFuelType(pkg.defaultFuelType);
     if (pkg.defaultTransmission) setTransmission(pkg.defaultTransmission);
     if (pkg.defaultBodyType) setBodyType(pkg.defaultBodyType);
@@ -231,7 +234,9 @@ export const IlanVer: React.FC = () => {
         setSelectedDistrictName(list[0].name);
         fetchNeighborhoods(list[0].id);
       }
-    } catch {}
+    } catch (e) {
+      console.error('İlçe yükleme hatası:', e);
+    }
   };
 
   // Mahalleleri Çek
@@ -244,7 +249,9 @@ export const IlanVer: React.FC = () => {
       if (list.length > 0) {
         setSelectedNeighborhoodName(list[0].name);
       }
-    } catch {}
+    } catch (e) {
+      console.error('Mahalle yükleme hatası:', e);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -398,11 +405,11 @@ export const IlanVer: React.FC = () => {
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Araç Türü</label>
                     <select
-                      className="w-full border p-2 rounded bg-white"
+                      className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedVehicleTypeId}
                       onChange={(e) => {
                         setSelectedVehicleTypeId(e.target.value);
-                        populateBrands(e.target.value);
+                        buildBrands(e.target.value);
                       }}
                     >
                       {vehicleTypes.map((t) => (
@@ -411,15 +418,15 @@ export const IlanVer: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...) */}
+                  {/* Marka (Audi, BMW, Mercedes, Renault, Fiat, Tofaş...) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
-                      className="w-full border p-2 rounded bg-white"
+                      className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedBrandId}
                       onChange={(e) => {
                         setSelectedBrandId(e.target.value);
-                        populateModels(e.target.value);
+                        buildModels(e.target.value);
                       }}
                     >
                       {brands.map((b) => (
@@ -432,11 +439,11 @@ export const IlanVer: React.FC = () => {
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Model / Seri</label>
                     <select
-                      className="w-full border p-2 rounded bg-white"
+                      className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedModelId}
                       onChange={(e) => {
                         setSelectedModelId(e.target.value);
-                        populatePackages(e.target.value);
+                        buildPackages(e.target.value);
                       }}
                     >
                       {models.map((m) => (
@@ -449,13 +456,13 @@ export const IlanVer: React.FC = () => {
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Paket & Donanım</label>
                     <select
-                      className="w-full border p-2 rounded bg-white"
+                      className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedPackageId}
                       onChange={(e) => {
                         setSelectedPackageId(e.target.value);
                         setDbCategoryId(e.target.value);
                         const sel = packages.find((p) => p.id === e.target.value);
-                        if (sel) applyPresetValues(sel);
+                        if (sel) syncVehicleDefaults(sel);
                       }}
                     >
                       {packages.map((p) => (
@@ -470,7 +477,7 @@ export const IlanVer: React.FC = () => {
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Emlak Türü</label>
                   <select
-                    className="w-full border p-2 rounded bg-white"
+                    className="w-full border p-2 rounded bg-white font-semibold"
                     value={realEstateSub}
                     onChange={(e) => {
                       setRealEstateSub(e.target.value);
@@ -486,7 +493,7 @@ export const IlanVer: React.FC = () => {
                 <div>
                   <label className="block font-bold text-gray-700 mb-1">Alt Kategori</label>
                   <select
-                    className="w-full border p-2 rounded bg-white"
+                    className="w-full border p-2 rounded bg-white font-semibold"
                     value={realEstateType}
                     onChange={(e) => setRealEstateType(e.target.value)}
                   >
@@ -503,7 +510,7 @@ export const IlanVer: React.FC = () => {
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
                 <select
-                  className="w-full border p-2 rounded bg-white"
+                  className="w-full border p-2 rounded bg-white font-semibold"
                   value={selectedCityId}
                   onChange={(e) => {
                     const cId = e.target.value;
@@ -522,7 +529,7 @@ export const IlanVer: React.FC = () => {
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İlçe</label>
                 <select
-                  className="w-full border p-2 rounded bg-white"
+                  className="w-full border p-2 rounded bg-white font-semibold"
                   value={selectedDistrictId}
                   onChange={(e) => {
                     const dId = e.target.value;
@@ -541,7 +548,7 @@ export const IlanVer: React.FC = () => {
               <div>
                 <label className="block font-bold text-gray-700 mb-1">Mahalle</label>
                 <select
-                  className="w-full border p-2 rounded bg-white"
+                  className="w-full border p-2 rounded bg-white font-semibold"
                   value={selectedNeighborhoodName}
                   onChange={(e) => setSelectedNeighborhoodName(e.target.value)}
                 >
@@ -572,7 +579,7 @@ export const IlanVer: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Model Yılı</label>
-                    <select className="w-full border p-2 rounded bg-white" value={year} onChange={(e) => setYear(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={year} onChange={(e) => setYear(e.target.value)}>
                       {Array.from({ length: 40 }, (_, i) => 2026 - i).map((y) => (
                         <option key={y} value={y}>{y}</option>
                       ))}
@@ -584,7 +591,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Yakıt Türü</label>
-                    <select className="w-full border p-2 rounded bg-white" value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
                       <option value="Benzin">Benzin</option>
                       <option value="Dizel">Dizel</option>
                       <option value="LPG & Benzin">LPG & Benzin</option>
@@ -594,7 +601,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Vites</label>
-                    <select className="w-full border p-2 rounded bg-white" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={transmission} onChange={(e) => setTransmission(e.target.value)}>
                       <option value="Otomatik">Otomatik</option>
                       <option value="Manuel">Manuel</option>
                       <option value="Yarı Otomatik">Yarı Otomatik</option>
@@ -602,7 +609,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Motor Hacmi</label>
-                    <select className="w-full border p-2 rounded bg-white" value={engineCapacity} onChange={(e) => setEngineCapacity(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={engineCapacity} onChange={(e) => setEngineCapacity(e.target.value)}>
                       {ENGINE_CAPACITY_OPTIONS.map((ec) => (
                         <option key={ec.value} value={ec.value}>{ec.label}</option>
                       ))}
@@ -614,7 +621,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Kasa Tipi</label>
-                    <select className="w-full border p-2 rounded bg-white" value={bodyType} onChange={(e) => setBodyType(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={bodyType} onChange={(e) => setBodyType(e.target.value)}>
                       <option value="Sedan">Sedan</option>
                       <option value="Hatchback">Hatchback</option>
                       <option value="Station Wagon">Station Wagon</option>
@@ -665,7 +672,7 @@ export const IlanVer: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Oda Sayısı</label>
-                    <select className="w-full border p-2 rounded bg-white" value={roomCount} onChange={(e) => setRoomCount(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={roomCount} onChange={(e) => setRoomCount(e.target.value)}>
                       <option value="1+0">1+0 (Stüdyo)</option>
                       <option value="1+1">1+1</option>
                       <option value="2+1">2+1</option>
@@ -696,7 +703,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Isıtma Tipi</label>
-                    <select className="w-full border p-2 rounded bg-white" value={heatingType} onChange={(e) => setHeatingType(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={heatingType} onChange={(e) => setHeatingType(e.target.value)}>
                       <option value="Kombi (Doğalgaz)">Kombi (Doğalgaz)</option>
                       <option value="Merkezi">Merkezi</option>
                       <option value="Yerden Isıtma">Yerden Isıtma</option>
@@ -705,7 +712,7 @@ export const IlanVer: React.FC = () => {
                   </div>
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Banyo Sayısı</label>
-                    <select className="w-full border p-2 rounded bg-white" value={bathroomCount} onChange={(e) => setBathroomCount(e.target.value)}>
+                    <select className="w-full border p-2 rounded bg-white font-semibold" value={bathroomCount} onChange={(e) => setBathroomCount(e.target.value)}>
                       <option value="1">1</option>
                       <option value="2">2</option>
                       <option value="3">3+</option>
@@ -832,4 +839,5 @@ export const IlanVer: React.FC = () => {
   );
 };
 
-export const CreateListingPage = IlanVer;
+// IlanVer sayfası için aynı bileşeni dışa aktar
+export const IlanVer = CreateListingPage;
