@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using GuvenleAlSat.DataAccess.Concrete.EntityFramework.Contexts;
+﻿using GuvenleAlSat.DataAccess.Concrete.EntityFramework.Contexts;
 using GuvenleAlSat.DataAccess.Entities.Categories;
 using GuvenleAlSat.DataAccess.Entities.Locations;
 using GuvenleAlSat.DataAccess.Entities.Subscriptions;
@@ -10,8 +9,6 @@ namespace GuvenleAlSat.DataAccess.Seeds;
 
 public static class DatabaseSeeder
 {
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
-
     public static async Task SeedAsync(AppDbContext context)
     {
         // 1. Abonelik Paketleri
@@ -27,29 +24,78 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. 81 İl, Tüm İlçeler ve Gerçek Mahallelerin Seed Edilmesi
+        // 2. 81 İl, Tüm İlçeler ve Mahalleler (TEK SEFERDE HIZLI KAYIT)
         if (await context.Cities.CountAsync() < 81)
         {
-            await SeedLocationsFromOpenDataOrLocalAsync(context);
+            var existingCityPlates = await context.Cities.Select(c => c.PlateCode).ToListAsync();
+            var allLocations = GetTurkeyLocationCatalog();
+
+            var newCities = new List<City>();
+            var newDistricts = new List<District>();
+            var newNeighborhoods = new List<Neighborhood>();
+
+            foreach (var loc in allLocations)
+            {
+                if (existingCityPlates.Contains(loc.PlateCode)) continue;
+
+                var cityId = Guid.NewGuid();
+                newCities.Add(new City
+                {
+                    Id = cityId,
+                    PlateCode = loc.PlateCode,
+                    Name = loc.CityName
+                });
+
+                foreach (var distName in loc.Districts)
+                {
+                    var distId = Guid.NewGuid();
+                    newDistricts.Add(new District
+                    {
+                        Id = distId,
+                        CityId = cityId,
+                        Name = distName
+                    });
+
+                    var neighborhoods = GetRealisticNeighborhoodsForDistrict(loc.CityName, distName);
+                    foreach (var nName in neighborhoods)
+                    {
+                        newNeighborhoods.Add(new Neighborhood
+                        {
+                            Id = Guid.NewGuid(),
+                            DistrictId = distId,
+                            Name = nName,
+                            ZipCode = $"{loc.PlateCode:D2}000"
+                        });
+                    }
+                }
+            }
+
+            if (newCities.Count > 0) await context.Cities.AddRangeAsync(newCities);
+            if (newDistricts.Count > 0) await context.Districts.AddRangeAsync(newDistricts);
+            if (newNeighborhoods.Count > 0) await context.Neighborhoods.AddRangeAsync(newNeighborhoods);
+
+            await context.SaveChangesAsync();
+            Console.WriteLine("[SEED]: 81 İl, 973 İlçe ve Mahalleler başarıyla yüklendi.");
         }
 
-        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (40+ Marka, Tüm Modeller ve Paketler)
+        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (TEK SEFERDE HIZLI KAYIT)
         if (!await context.Categories.AnyAsync())
         {
-            var vasita = new Category { Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false };
-            var emlak = new Category { Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false };
+            var vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false };
+            var emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false };
             await context.Categories.AddRangeAsync(vasita, emlak);
             await context.SaveChangesAsync();
 
-            var otomobil = new Category { Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false };
-            var suv = new Category { Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false };
-            var ticari = new Category { Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false };
+            var otomobil = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false };
+            var suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false };
+            var ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false };
             await context.Categories.AddRangeAsync(otomobil, suv, ticari);
             await context.SaveChangesAsync();
 
             var rawBrands = GetRawBrandCatalog();
-            int brandOrder = 1;
+            var allVehicleCategories = new List<Category>();
 
+            int brandOrder = 1;
             foreach (var kvp in rawBrands)
             {
                 string brandName = kvp.Key;
@@ -57,14 +103,14 @@ public static class DatabaseSeeder
 
                 var brandCategory = new Category
                 {
+                    Id = Guid.NewGuid(),
                     Name = brandName,
                     Slug = Slugify(brandName),
                     ParentCategoryId = otomobil.Id,
                     DisplayOrder = brandOrder++,
                     IsLeaf = false
                 };
-                await context.Categories.AddAsync(brandCategory);
-                await context.SaveChangesAsync();
+                allVehicleCategories.Add(brandCategory);
 
                 int seriesOrder = 1;
                 foreach (var seriesName in seriesList)
@@ -74,86 +120,24 @@ public static class DatabaseSeeder
 
                     var seriesCategory = new Category
                     {
+                        Id = Guid.NewGuid(),
                         Name = seriesName,
                         Slug = Slugify($"{brandName}-{seriesName}"),
                         ParentCategoryId = brandCategory.Id,
                         DisplayOrder = seriesOrder++,
                         IsLeaf = false
                     };
-                    await context.Categories.AddAsync(seriesCategory);
-                    await context.SaveChangesAsync();
+                    allVehicleCategories.Add(seriesCategory);
 
                     var subPackages = GeneratePackagesForSeries(brandName, seriesName, seriesCategory.Id, isSuvSeries, isCommercialSeries);
-                    await context.Categories.AddRangeAsync(subPackages);
-                    await context.SaveChangesAsync();
-                }
-            }
-        }
-    }
-
-    private static async Task SeedLocationsFromOpenDataOrLocalAsync(AppDbContext context)
-    {
-        var existingCities = await context.Cities.Include(c => c.Districts).ToListAsync();
-        var allLocations = GetTurkeyLocationCatalog();
-
-        foreach (var loc in allLocations)
-        {
-            var city = existingCities.FirstOrDefault(c => c.PlateCode == loc.PlateCode);
-            if (city == null)
-            {
-                city = new City
-                {
-                    Id = Guid.NewGuid(),
-                    PlateCode = loc.PlateCode,
-                    Name = loc.CityName
-                };
-                await context.Cities.AddAsync(city);
-                await context.SaveChangesAsync();
-            }
-
-            var existingDistricts = await context.Districts
-                .Where(d => d.CityId == city.Id)
-                .Select(d => d.Name.ToLower())
-                .ToListAsync();
-
-            var newDistricts = new List<District>();
-            foreach (var distName in loc.Districts)
-            {
-                if (!existingDistricts.Contains(distName.ToLower()))
-                {
-                    newDistricts.Add(new District
-                    {
-                        Id = Guid.NewGuid(),
-                        CityId = city.Id,
-                        Name = distName
-                    });
+                    allVehicleCategories.AddRange(subPackages);
                 }
             }
 
-            if (newDistricts.Count > 0)
-            {
-                await context.Districts.AddRangeAsync(newDistricts);
-                await context.SaveChangesAsync();
-
-                var newNeighborhoods = new List<Neighborhood>();
-                foreach (var d in newDistricts)
-                {
-                    // Her ilçeye ait gerçekçi mahalle listeleri
-                    var neighborhoods = GetRealisticNeighborhoodsForDistrict(loc.CityName, d.Name);
-                    foreach (var nName in neighborhoods)
-                    {
-                        newNeighborhoods.Add(new Neighborhood
-                        {
-                            Id = Guid.NewGuid(),
-                            DistrictId = d.Id,
-                            Name = nName,
-                            ZipCode = $"{loc.PlateCode:D2}000"
-                        });
-                    }
-                }
-                await context.Neighborhoods.AddRangeAsync(newNeighborhoods);
-                await context.SaveChangesAsync();
-            }
+            // BÜTÜN ARAÇLARI TEK BİR INSERT SORGUSUYLA YAZDIR:
+            await context.Categories.AddRangeAsync(allVehicleCategories);
+            await context.SaveChangesAsync();
+            Console.WriteLine("[SEED]: 40+ Marka, yüzlerce seri ve motor paketi başarıyla yüklendi.");
         }
     }
 
@@ -307,6 +291,7 @@ public static class DatabaseSeeder
         {
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} Standart Menzil (RWD)",
                 Slug = Slugify($"{brand}-{series}-standart-rwd"),
                 ParentCategoryId = seriesId,
@@ -320,6 +305,7 @@ public static class DatabaseSeeder
             });
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} Long Range Dual Motor (AWD)",
                 Slug = Slugify($"{brand}-{series}-long-range-awd"),
                 ParentCategoryId = seriesId,
@@ -336,6 +322,7 @@ public static class DatabaseSeeder
         {
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} V8 Bi-Turbo Performance",
                 Slug = Slugify($"{brand}-{series}-v8-biturbo"),
                 ParentCategoryId = seriesId,
@@ -352,6 +339,7 @@ public static class DatabaseSeeder
         {
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} 1.0 / 1.5 Benzinli Otomatik",
                 Slug = Slugify($"{brand}-{series}-benzin-otomatik"),
                 ParentCategoryId = seriesId,
@@ -366,6 +354,7 @@ public static class DatabaseSeeder
 
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} 1.5 / 2.0 Dizel Manuel",
                 Slug = Slugify($"{brand}-{series}-dizel-manuel"),
                 ParentCategoryId = seriesId,
@@ -380,6 +369,7 @@ public static class DatabaseSeeder
 
             list.Add(new Category
             {
+                Id = Guid.NewGuid(),
                 Name = $"{series} 1.6 / 1.8 Hibrit & ECO Otomatik",
                 Slug = Slugify($"{brand}-{series}-hibrit-otomatik"),
                 ParentCategoryId = seriesId,
