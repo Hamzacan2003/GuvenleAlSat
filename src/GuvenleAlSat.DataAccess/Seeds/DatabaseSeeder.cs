@@ -24,10 +24,11 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. 81 İl, Tüm İlçeler ve Mahalleler (TEK SEFERDE HIZLI KAYIT)
-        if (await context.Cities.CountAsync() < 81)
+        // 2. 81 İl, 973 İlçe ve Mahallelerin Eksiksiz Yüklenmesi
+        var cityCount = await context.Cities.CountAsync();
+        if (cityCount < 81)
         {
-            var existingCityPlates = await context.Cities.Select(c => c.PlateCode).ToListAsync();
+            var existingPlates = await context.Cities.Select(c => c.PlateCode).ToListAsync();
             var allLocations = GetTurkeyLocationCatalog();
 
             var newCities = new List<City>();
@@ -36,7 +37,7 @@ public static class DatabaseSeeder
 
             foreach (var loc in allLocations)
             {
-                if (existingCityPlates.Contains(loc.PlateCode)) continue;
+                if (existingPlates.Contains(loc.PlateCode)) continue;
 
                 var cityId = Guid.NewGuid();
                 newCities.Add(new City
@@ -75,30 +76,74 @@ public static class DatabaseSeeder
             if (newNeighborhoods.Count > 0) await context.Neighborhoods.AddRangeAsync(newNeighborhoods);
 
             await context.SaveChangesAsync();
-            Console.WriteLine("[SEED]: 81 İl, 973 İlçe ve Mahalleler başarıyla yüklendi.");
+            Console.WriteLine("[SEED]: 81 İl, İlçeler ve Mahalleler başarıyla yüklendi.");
         }
 
-        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (TEK SEFERDE HIZLI KAYIT)
-        if (!await context.Categories.AnyAsync())
+        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (40+ Marka, Modeller ve Paketler)
+        // Eğer veritabanında araç sayısı 10'dan azsa eksik seed yapılmıştır, zorla doldur:
+        var otomobilCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "otomobil");
+        int existingBrandCount = 0;
+        if (otomobilCat != null)
         {
-            var vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false };
-            var emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false };
-            await context.Categories.AddRangeAsync(vasita, emlak);
-            await context.SaveChangesAsync();
+            existingBrandCount = await context.Categories.CountAsync(c => c.ParentCategoryId == otomobilCat.Id);
+        }
 
-            var otomobil = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false };
-            var suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false };
-            var ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false };
-            await context.Categories.AddRangeAsync(otomobil, suv, ticari);
-            await context.SaveChangesAsync();
+        if (otomobilCat == null || existingBrandCount < 10)
+        {
+            var vasita = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita");
+            if (vasita == null)
+            {
+                vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false };
+                await context.Categories.AddAsync(vasita);
+                await context.SaveChangesAsync();
+            }
+
+            var emlak = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "emlak");
+            if (emlak == null)
+            {
+                emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false };
+                await context.Categories.AddAsync(emlak);
+                await context.SaveChangesAsync();
+            }
+
+            if (otomobilCat == null)
+            {
+                otomobilCat = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false };
+                await context.Categories.AddAsync(otomobilCat);
+                await context.SaveChangesAsync();
+            }
+
+            var suv = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "arazi-suv-pickup");
+            if (suv == null)
+            {
+                suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false };
+                await context.Categories.AddAsync(suv);
+                await context.SaveChangesAsync();
+            }
+
+            var ticari = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "kamyonet-hafif-ticari");
+            if (ticari == null)
+            {
+                ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false };
+                await context.Categories.AddAsync(ticari);
+                await context.SaveChangesAsync();
+            }
 
             var rawBrands = GetRawBrandCatalog();
             var allVehicleCategories = new List<Category>();
 
-            int brandOrder = 1;
+            // Mevcut markaları kontrol et, sadece eksik olanları ekle
+            var existingBrandNames = await context.Categories
+                .Where(c => c.ParentCategoryId == otomobilCat.Id)
+                .Select(c => c.Name.ToUpper())
+                .ToListAsync();
+
+            int brandOrder = existingBrandNames.Count + 1;
             foreach (var kvp in rawBrands)
             {
                 string brandName = kvp.Key;
+                if (existingBrandNames.Contains(brandName.ToUpper())) continue;
+
                 string[] seriesList = kvp.Value;
 
                 var brandCategory = new Category
@@ -106,7 +151,7 @@ public static class DatabaseSeeder
                     Id = Guid.NewGuid(),
                     Name = brandName,
                     Slug = Slugify(brandName),
-                    ParentCategoryId = otomobil.Id,
+                    ParentCategoryId = otomobilCat.Id,
                     DisplayOrder = brandOrder++,
                     IsLeaf = false
                 };
@@ -134,10 +179,12 @@ public static class DatabaseSeeder
                 }
             }
 
-            // BÜTÜN ARAÇLARI TEK BİR INSERT SORGUSUYLA YAZDIR:
-            await context.Categories.AddRangeAsync(allVehicleCategories);
-            await context.SaveChangesAsync();
-            Console.WriteLine("[SEED]: 40+ Marka, yüzlerce seri ve motor paketi başarıyla yüklendi.");
+            if (allVehicleCategories.Count > 0)
+            {
+                await context.Categories.AddRangeAsync(allVehicleCategories);
+                await context.SaveChangesAsync();
+                Console.WriteLine("[SEED]: Tüm araç hiyerarşisi (40+ marka, seriler, paketler) başarıyla yüklendi.");
+            }
         }
     }
 
