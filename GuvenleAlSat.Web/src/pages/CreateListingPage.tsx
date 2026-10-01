@@ -26,7 +26,7 @@ const REAL_ESTATE_HIERARCHY: Record<string, string[]> = {
   'Arsa': ['İmarlı - Konut', 'İmarlı - Ticari', 'Tarla']
 };
 
-const ENGINE_CAPACITIES = [
+const ENGINE_CAPACITY_OPTIONS = [
   { label: '1.0 altı', value: '999' },
   { label: '1.0', value: '1000' },
   { label: '1.2', value: '1200' },
@@ -40,6 +40,33 @@ const ENGINE_CAPACITIES = [
   { label: '3.0 ve üzeri', value: '2998' },
   { label: 'Elektrikli (0 cc)', value: '0' }
 ];
+
+// SUV ve Ticari Kataloğu (Veritabanında alt kategori henüz yoksa anında devreye girer)
+const SUV_CATALOG: Record<string, string[]> = {
+  'DACIA': ['Duster', 'Sandero Stepway', 'Jogger', 'Bigster'],
+  'NISSAN': ['Qashqai', 'X-Trail', 'Juke'],
+  'CHERY': ['Tiggo 7 Pro', 'Tiggo 8 Pro', 'Omoda 5'],
+  'PEUGEOT': ['2008', '3008', '5008'],
+  'VOLKSWAGEN': ['Tiguan', 'T-Roc', 'Taigo', 'Touareg'],
+  'HYUNDAI': ['Tucson', 'Bayon', 'Kona', 'Santa Fe'],
+  'TOYOTA': ['C-HR', 'RAV4', 'Corolla Cross', 'Yaris Cross', 'Land Cruiser'],
+  'JEEP': ['Renegade', 'Compass', 'Wrangler', 'Grand Cherokee'],
+  'KIA': ['Sportage', 'Stonic', 'XCeed', 'Sorento'],
+  'BMW': ['X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7'],
+  'MERCEDES-BENZ': ['GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'G Serisi'],
+  'AUDI': ['Q2', 'Q3', 'Q5', 'Q7', 'Q8']
+};
+
+const COMMERCIAL_CATALOG: Record<string, string[]> = {
+  'FORD': ['Tourneo Courier', 'Tourneo Connect', 'Tourneo Custom', 'Transit', 'Transit Custom', 'Ranger'],
+  'FIAT': ['Doblo Combi', 'Doblo Cargo', 'Fiorino Combi', 'Fiorino Cargo', 'Ducato'],
+  'RENAULT': ['Kangoo Multix', 'Kangoo Express', 'Trafic', 'Master'],
+  'VOLKSWAGEN': ['Caddy', 'Transporter', 'Caravelle', 'Crafter', 'Amarok'],
+  'PEUGEOT': ['Rifter', 'Partner', 'Expert', 'Boxer'],
+  'CITROEN': ['Berlingo', 'Jumpy', 'Jumper'],
+  'OPEL': ['Combo Life', 'Combo Cargo', 'Vivaro', 'Movano'],
+  'TOYOTA': ['Hilux', 'Proace City']
+};
 
 export const CreateListingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -138,10 +165,11 @@ export const CreateListingPage: React.FC = () => {
     // Kök Kategorileri Çek (Vasıta, Emlak)
     api.get('/Categories/roots').then(async (res) => {
       const rootList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      const vasita = rootList.find((c: any) => c.slug?.toLowerCase().includes('vasita') || c.name?.toLowerCase().includes('vasıta')) || rootList[0];
+      const vasita = rootList.find(
+        (c: any) => c.slug?.toLowerCase().includes('vasita') || c.name?.toLowerCase().includes('vasıta')
+      ) || rootList[0];
 
       if (vasita) {
-        // Vasıta altındaki Araç Türleri (Otomobil, Arazi & SUV, Ticari)
         const subRes = await api.get(`/Categories/${vasita.id}/subcategories`);
         const vTypes = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.data || []);
         setVehicleTypes(vTypes);
@@ -149,7 +177,7 @@ export const CreateListingPage: React.FC = () => {
         if (vTypes.length > 0) {
           const firstType = vTypes[0];
           setSelectedVehicleTypeId(firstType.id);
-          loadBrands(firstType.id);
+          loadBrands(firstType.id, vTypes);
         }
       }
     }).catch((err) => {
@@ -157,37 +185,75 @@ export const CreateListingPage: React.FC = () => {
     });
   }, []);
 
-  // Araç Türü Değişince Markaları Çek (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...)
-  const loadBrands = async (vehicleTypeId: string) => {
+  // Araç Türü Değişince Markaları Çek (Otomobil, SUV, Ticari)
+  const loadBrands = async (vehicleTypeId: string, currentTypeList = vehicleTypes) => {
     setBrands([]);
     setModels([]);
     setPackages([]);
+
+    const currentType = currentTypeList.find((t) => t.id === vehicleTypeId);
+    const typeName = (currentType?.name || '').toLowerCase();
+
     try {
       const res = await api.get(`/Categories/${vehicleTypeId}/subcategories`);
-      const bList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      let bList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+
+      // Eğer backend SUV veya Ticari altını boş dönmüşse kataloğu devreye al:
+      if (bList.length === 0) {
+        if (typeName.includes('suv') || typeName.includes('arazi')) {
+          bList = Object.keys(SUV_CATALOG).map((b) => ({ id: `suv-${b}`, name: b, isCatalog: true }));
+        } else if (typeName.includes('ticari') || typeName.includes('kamyonet')) {
+          bList = Object.keys(COMMERCIAL_CATALOG).map((b) => ({ id: `com-${b}`, name: b, isCatalog: true }));
+        }
+      }
+
       setBrands(bList);
       if (bList.length > 0) {
-        const firstB = bList[0];
-        setSelectedBrandId(firstB.id);
-        loadModels(firstB.id);
+        setSelectedBrandId(bList[0].id);
+        loadModels(bList[0].id, bList[0]);
       }
     } catch (e) {
       console.error('Marka yükleme hatası:', e);
     }
   };
 
-  // Marka Değişince Modelleri Çek (A3, Clio, Egea, Şahin...)
-  const loadModels = async (brandId: string) => {
+  // Marka Değişince Modelleri Çek
+  const loadModels = async (brandId: string, brandObj?: any) => {
     setModels([]);
     setPackages([]);
+
+    const bName = brandObj?.name || brands.find((b) => b.id === brandId)?.name || '';
+
+    // SUV Kataloğu
+    if (brandId.startsWith('suv-') && SUV_CATALOG[bName]) {
+      const mList = SUV_CATALOG[bName].map((m) => ({ id: `model-${m}`, name: m, brandName: bName }));
+      setModels(mList);
+      if (mList.length > 0) {
+        setSelectedModelId(mList[0].id);
+        generateMockPackages(bName, mList[0].name, true, false);
+      }
+      return;
+    }
+
+    // Ticari Kataloğu
+    if (brandId.startsWith('com-') && COMMERCIAL_CATALOG[bName]) {
+      const mList = COMMERCIAL_CATALOG[bName].map((m) => ({ id: `model-${m}`, name: m, brandName: bName }));
+      setModels(mList);
+      if (mList.length > 0) {
+        setSelectedModelId(mList[0].id);
+        generateMockPackages(bName, mList[0].name, false, true);
+      }
+      return;
+    }
+
+    // Normal Veritabanı Modelleri (Otomobil)
     try {
       const res = await api.get(`/Categories/${brandId}/subcategories`);
       const mList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       setModels(mList);
       if (mList.length > 0) {
-        const firstM = mList[0];
-        setSelectedModelId(firstM.id);
-        loadPackages(firstM.id);
+        setSelectedModelId(mList[0].id);
+        loadPackages(mList[0].id);
       } else {
         setDbCategoryId(brandId);
       }
@@ -196,7 +262,7 @@ export const CreateListingPage: React.FC = () => {
     }
   };
 
-  // Model Değişince Paketleri Çek
+  // Model Değişince Paketleri Çek (Veritabanı)
   const loadPackages = async (modelId: string) => {
     setPackages([]);
     try {
@@ -215,6 +281,19 @@ export const CreateListingPage: React.FC = () => {
     } catch (e) {
       console.error('Paket yükleme hatası:', e);
     }
+  };
+
+  // SUV & Ticari Paketlerini Hızlı Doldurma
+  const generateMockPackages = (brand: string, model: string, isSuv: boolean, isCom: boolean) => {
+    const list = [
+      { id: 'p1', name: `${model} 1.0 / 1.5 Benzinli Otomatik`, defaultFuelType: 'Benzin', defaultTransmission: 'Otomatik', defaultBodyType: isSuv ? 'SUV' : 'Kamyonet/Van', defaultEngineCapacityCc: 1498, defaultEnginePowerHp: 150 },
+      { id: 'p2', name: `${model} 1.5 / 2.0 Dizel Manuel`, defaultFuelType: 'Dizel', defaultTransmission: 'Manuel', defaultBodyType: isSuv ? 'SUV' : 'Kamyonet/Van', defaultEngineCapacityCc: 1598, defaultEnginePowerHp: 115 },
+      { id: 'p3', name: `${model} 1.6 Hibrit / ECO Otomatik`, defaultFuelType: 'Hibrit', defaultTransmission: 'Otomatik', defaultBodyType: isSuv ? 'SUV' : 'Kamyonet/Van', defaultEngineCapacityCc: 1598, defaultEnginePowerHp: 140 }
+    ];
+    setPackages(list);
+    setSelectedPackageId(list[0].id);
+    setDbCategoryId(selectedVehicleTypeId);
+    syncVehicleDefaults(list[0]);
   };
 
   const syncVehicleDefaults = (pkg: any) => {
@@ -298,7 +377,11 @@ export const CreateListingPage: React.FC = () => {
         displayOrder: idx + 1
       }));
 
-      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedModelId || selectedBrandId || '11111111-1111-1111-1111-111111111111';
+      // Eğer mock paketse geçerli kategori ID olarak araç türünün ID'sini gönder
+      let categoryIdToSend = dbCategoryId || selectedPackageId || selectedModelId || selectedBrandId;
+      if (!categoryIdToSend || categoryIdToSend.startsWith('suv-') || categoryIdToSend.startsWith('com-') || categoryIdToSend.startsWith('model-') || categoryIdToSend.startsWith('p')) {
+        categoryIdToSend = selectedVehicleTypeId;
+      }
 
       const payload: any = {
         categoryId: categoryIdToSend,
@@ -412,8 +495,9 @@ export const CreateListingPage: React.FC = () => {
                       className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedVehicleTypeId}
                       onChange={(e) => {
-                        setSelectedVehicleTypeId(e.target.value);
-                        loadBrands(e.target.value);
+                        const newId = e.target.value;
+                        setSelectedVehicleTypeId(newId);
+                        loadBrands(newId);
                       }}
                     >
                       {vehicleTypes.map((t) => (
@@ -422,15 +506,16 @@ export const CreateListingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...) */}
+                  {/* Marka */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
                       className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedBrandId}
                       onChange={(e) => {
-                        setSelectedBrandId(e.target.value);
-                        loadModels(e.target.value);
+                        const bId = e.target.value;
+                        setSelectedBrandId(bId);
+                        loadModels(bId);
                       }}
                     >
                       {brands.map((b) => (
@@ -446,8 +531,16 @@ export const CreateListingPage: React.FC = () => {
                       className="w-full border p-2 rounded bg-white font-semibold"
                       value={selectedModelId}
                       onChange={(e) => {
-                        setSelectedModelId(e.target.value);
-                        loadPackages(e.target.value);
+                        const mId = e.target.value;
+                        setSelectedModelId(mId);
+                        const selM = models.find((m) => m.id === mId);
+                        if (selM?.brandName) {
+                          const currentType = vehicleTypes.find((t) => t.id === selectedVehicleTypeId);
+                          const isSuv = (currentType?.name || '').toLowerCase().includes('suv');
+                          generateMockPackages(selM.brandName, selM.name, isSuv, !isSuv);
+                        } else {
+                          loadPackages(mId);
+                        }
                       }}
                     >
                       {models.map((m) => (
