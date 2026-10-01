@@ -126,7 +126,7 @@ export const CreateListingPage: React.FC = () => {
   useEffect(() => {
     // 81 İli Çek
     api.get('/locations/cities').then((res) => {
-      const cityData = res.data?.data || res.data || [];
+      const cityData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       if (Array.isArray(cityData) && cityData.length > 0) {
         setCities(cityData);
         const ankara = cityData.find((c: any) => c.name.toLowerCase() === 'ankara') || cityData[0];
@@ -136,24 +136,47 @@ export const CreateListingPage: React.FC = () => {
       }
     });
 
-    // Araç Kataloğunu Çek (Doğrudan vehicle-catalog endpoint'i)
+    // Araç Kataloğunu Çek
     api.get('/categories/vehicle-catalog').then((res) => {
-      const data = res.data?.data || [];
-      console.log('ARAÇ KATALOĞU ÇEKİLDİ:', data.length, 'adet kayıt');
-      if (Array.isArray(data) && data.length > 0) {
-        setAllCategories(data);
+      const rawList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      console.log('ARAÇ KATALOĞU ÇEKİLDİ:', rawList.length, 'adet kayıt');
 
-        // Vasıta altındaki 2. Seviye Araç Türleri (Otomobil, SUV, Kamyonet)
-        const vasita = data.find((c: any) => c.slug === 'vasita');
-        const vTypes = vasita
-          ? data.filter((c: any) => c.parentCategoryId === vasita.id)
-          : data.filter((c: any) => !c.parentCategoryId && c.slug !== 'emlak');
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        setAllCategories(rawList);
+
+        // Vasıta kökünü tespit et
+        const vasita = rawList.find(
+          (c: any) => c.slug?.toLowerCase().includes('vasita') || c.name?.toLowerCase().includes('vasıta')
+        );
+
+        // Araç Türleri: Otomobil, SUV, Kamyonet/Ticari
+        let vTypes = [];
+        if (vasita) {
+          vTypes = rawList.filter((c: any) => c.parentCategoryId === vasita.id);
+        }
+
+        // Eğer vasita id'siyle bulunamazsa parentCategoryId'si null olup Emlak olmayanları al
+        if (vTypes.length === 0) {
+          vTypes = rawList.filter(
+            (c: any) => !c.parentCategoryId && !c.name?.toLowerCase().includes('emlak') && !c.slug?.toLowerCase().includes('emlak')
+          );
+        }
+
+        // Eğer hâlâ boşsa ismi Otomobil, SUV veya Ticari olanları doğrudan tür yap
+        if (vTypes.length === 0) {
+          vTypes = rawList.filter(
+            (c: any) =>
+              c.name?.toLowerCase().includes('otomobil') ||
+              c.name?.toLowerCase().includes('suv') ||
+              c.name?.toLowerCase().includes('ticari')
+          );
+        }
 
         setVehicleTypes(vTypes);
         if (vTypes.length > 0) {
           const firstType = vTypes[0];
           setSelectedVehicleTypeId(firstType.id);
-          buildBrands(firstType.id, data);
+          buildBrands(firstType.id, rawList);
         }
       }
     }).catch((err) => {
@@ -161,11 +184,16 @@ export const CreateListingPage: React.FC = () => {
     });
   }, []);
 
-  // Araç Türü Değişince Markaları Kur (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...)
+  // Araç Türü Değişince Markaları Kur (40+ Marka)
   const buildBrands = (typeId: string, sourceCats = allCategories) => {
-    const bList = sourceCats
+    let bList = sourceCats
       .filter((c: any) => c.parentCategoryId === typeId)
       .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
+
+    // Eğer doğrudan eşleşme yoksa (kategori kök seviyesine göre), markaları bul
+    if (bList.length === 0) {
+      bList = sourceCats.filter((c: any) => !c.isLeaf && c.parentCategoryId !== null);
+    }
 
     setBrands(bList);
     if (bList.length > 0) {
@@ -178,7 +206,7 @@ export const CreateListingPage: React.FC = () => {
     }
   };
 
-  // Marka Değişince Modelleri Kur (Örn: Renault -> Clio, Megane, Toros...)
+  // Marka Değişince Modelleri Kur
   const buildModels = (brandId: string, sourceCats = allCategories) => {
     const mList = sourceCats
       .filter((c: any) => c.parentCategoryId === brandId)
@@ -212,7 +240,6 @@ export const CreateListingPage: React.FC = () => {
     }
   };
 
-  // Paketten Gelen Motor Hacmi, Yakıt ve Vites Değerlerini Form Alanına Ön Doldur
   const syncVehicleDefaults = (pkg: any) => {
     if (pkg.defaultFuelType) setFuelType(pkg.defaultFuelType);
     if (pkg.defaultTransmission) setTransmission(pkg.defaultTransmission);
@@ -227,7 +254,7 @@ export const CreateListingPage: React.FC = () => {
     setNeighborhoods([]);
     try {
       const res = await api.get(`/locations/districts/${cityId}`);
-      const list = res.data?.data || res.data || [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       setDistricts(list);
       if (list.length > 0) {
         setSelectedDistrictId(list[0].id);
@@ -244,7 +271,7 @@ export const CreateListingPage: React.FC = () => {
     setNeighborhoods([]);
     try {
       const res = await api.get(`/locations/neighborhoods/${districtId}`);
-      const list = res.data?.data || res.data || [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       setNeighborhoods(list);
       if (list.length > 0) {
         setSelectedNeighborhoodName(list[0].name);
@@ -505,7 +532,7 @@ export const CreateListingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Lokasyon (81 İl, Tüm İlçeler ve Geniş Mahalleler) */}
+            {/* Lokasyon */}
             <div className="pt-4 border-t grid grid-cols-3 gap-3">
               <div>
                 <label className="block font-bold text-gray-700 mb-1">İl (81 İl)</label>
@@ -839,5 +866,4 @@ export const CreateListingPage: React.FC = () => {
   );
 };
 
-// IlanVer sayfası için aynı bileşeni dışa aktar
 export const IlanVer = CreateListingPage;
