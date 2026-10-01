@@ -11,7 +11,7 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(AppDbContext context)
     {
-        // 1. Abonelik Paketleri
+        // 1. Abonelik Planları
         if (!await context.SubscriptionPlans.AnyAsync())
         {
             var plans = new List<SubscriptionPlan>
@@ -24,7 +24,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. 81 İl ve Tüm İlçelerin Eksiksiz Yüklenmesi
+        // 2. 81 İl, İlçe ve Mahalleler
         var cityCount = await context.Cities.CountAsync();
         if (cityCount < 81)
         {
@@ -60,51 +60,53 @@ public static class DatabaseSeeder
             if (newNeighborhoods.Count > 0) await context.Neighborhoods.AddRangeAsync(newNeighborhoods);
 
             await context.SaveChangesAsync();
-            Console.WriteLine("[SEED]: 81 İl ve 973 İlçe başarıyla yüklendi.");
+            Console.WriteLine("[SEED]: 81 İl ve İlçeler başarıyla yüklendi.");
         }
 
-        // 3. Vasıta Kategori Ağacı (Tüm Markalar, SUV ve Ticari Dahil)
-        // Eğer kategori sayısı 50'den azsa eski yarım veriyi temizle ve tam ağacı kur:
-        var totalCategoryCount = await context.Categories.CountAsync();
-        if (totalCategoryCount < 50)
+        // 3. Kök Kategoriler (Vasıta & Emlak)
+        var vasita = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
+        if (vasita == null)
         {
-            // Eski eksik kategorileri temizle
-            var oldCategories = await context.Categories.ToListAsync();
-            if (oldCategories.Any())
-            {
-                context.Categories.RemoveRange(oldCategories);
-                await context.SaveChangesAsync();
-            }
-
-            var vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
-            var emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
-            await context.Categories.AddRangeAsync(vasita, emlak);
+            vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddAsync(vasita);
             await context.SaveChangesAsync();
+        }
 
-            var otomobil = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
-            var suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
-            var ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false, IsDeleted = false };
-            await context.Categories.AddRangeAsync(otomobil, suv, ticari);
+        var emlak = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "emlak" && !c.IsDeleted);
+        if (emlak == null)
+        {
+            emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddAsync(emlak);
             await context.SaveChangesAsync();
+        }
 
+        // 4. Otomobil Ağacı
+        var otomobilCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "otomobil" && !c.IsDeleted);
+        if (otomobilCat == null)
+        {
+            otomobilCat = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddAsync(otomobilCat);
+            await context.SaveChangesAsync();
+        }
+
+        int otomobilBrandsCount = await context.Categories.CountAsync(c => c.ParentCategoryId == otomobilCat.Id && !c.IsDeleted);
+        if (otomobilBrandsCount < 10)
+        {
             var rawBrands = GetRawBrandCatalog();
             var allVehicleCategories = new List<Category>();
-
             int brandOrder = 1;
+
             foreach (var kvp in rawBrands)
             {
                 string brandName = kvp.Key;
                 string[] seriesList = kvp.Value;
 
-                // Markanın SUV/Ticari/Otomobil dağılımını belirle
-                var targetParent = otomobil.Id;
-
                 var brandCategory = new Category
                 {
                     Id = Guid.NewGuid(),
                     Name = brandName,
-                    Slug = Slugify(brandName),
-                    ParentCategoryId = targetParent,
+                    Slug = Slugify($"oto-{brandName}"),
+                    ParentCategoryId = otomobilCat.Id,
                     DisplayOrder = brandOrder++,
                     IsLeaf = false,
                     IsDeleted = false
@@ -114,118 +116,301 @@ public static class DatabaseSeeder
                 int seriesOrder = 1;
                 foreach (var seriesName in seriesList)
                 {
-                    bool isSuvSeries = IsSuvName(seriesName);
-                    bool isCommercialSeries = IsCommercialName(seriesName);
-
-                    // Eğer model SUV ise SUV kategorisine de bağla
-                    var seriesParent = brandCategory.Id;
-
                     var seriesCategory = new Category
                     {
                         Id = Guid.NewGuid(),
                         Name = seriesName,
-                        Slug = Slugify($"{brandName}-{seriesName}"),
-                        ParentCategoryId = seriesParent,
+                        Slug = Slugify($"oto-{brandName}-{seriesName}"),
+                        ParentCategoryId = brandCategory.Id,
                         DisplayOrder = seriesOrder++,
                         IsLeaf = false,
                         IsDeleted = false
                     };
                     allVehicleCategories.Add(seriesCategory);
-
-                    var subPackages = GeneratePackagesForSeries(brandName, seriesName, seriesCategory.Id, isSuvSeries, isCommercialSeries);
-                    allVehicleCategories.AddRange(subPackages);
-                }
-            }
-
-            // SUV ve Ticari altına da ilgili markaları ekle
-            var suvBrands = new[] { "DACIA", "NISSAN", "PEUGEOT", "VOLKSWAGEN", "TOYOTA", "HYUNDAI", "JEEP", "CHERY" };
-            foreach (var sb in suvBrands)
-            {
-                if (rawBrands.ContainsKey(sb))
-                {
-                    var suvBrandCat = new Category
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = sb,
-                        Slug = Slugify($"suv-{sb}"),
-                        ParentCategoryId = suv.Id,
-                        DisplayOrder = 1,
-                        IsLeaf = false,
-                        IsDeleted = false
-                    };
-                    allVehicleCategories.Add(suvBrandCat);
-
-                    foreach (var sName in rawBrands[sb].Where(IsSuvName))
-                    {
-                        var sCat = new Category
-                        {
-                            Id = Guid.NewGuid(),
-                            Name = sName,
-                            Slug = Slugify($"suv-{sb}-{sName}"),
-                            ParentCategoryId = suvBrandCat.Id,
-                            DisplayOrder = 1,
-                            IsLeaf = false,
-                            IsDeleted = false
-                        };
-                        allVehicleCategories.Add(sCat);
-                        allVehicleCategories.AddRange(GeneratePackagesForSeries(sb, sName, sCat.Id, true, false));
-                    }
-                }
-            }
-
-            var commercialBrands = new[] { "FORD", "FIAT", "VOLKSWAGEN", "RENAULT", "PEUGEOT", "CITROEN" };
-            foreach (var cb in commercialBrands)
-            {
-                if (rawBrands.ContainsKey(cb))
-                {
-                    var comBrandCat = new Category
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = cb,
-                        Slug = Slugify($"ticari-{cb}"),
-                        ParentCategoryId = ticari.Id,
-                        DisplayOrder = 1,
-                        IsLeaf = false,
-                        IsDeleted = false
-                    };
-                    allVehicleCategories.Add(comBrandCat);
-
-                    foreach (var sName in rawBrands[cb].Where(IsCommercialName))
-                    {
-                        var sCat = new Category
-                        {
-                            Id = Guid.NewGuid(),
-                            Name = sName,
-                            Slug = Slugify($"ticari-{cb}-{sName}"),
-                            ParentCategoryId = comBrandCat.Id,
-                            DisplayOrder = 1,
-                            IsLeaf = false,
-                            IsDeleted = false
-                        };
-                        allVehicleCategories.Add(sCat);
-                        allVehicleCategories.AddRange(GeneratePackagesForSeries(cb, sName, sCat.Id, false, true));
-                    }
+                    allVehicleCategories.AddRange(GeneratePackagesForSeries(brandName, seriesName, seriesCategory.Id, false, false));
                 }
             }
 
             await context.Categories.AddRangeAsync(allVehicleCategories);
             await context.SaveChangesAsync();
-            Console.WriteLine("[SEED]: Otomobil, SUV, Ticari olmak üzere tüm hiyerarşi başarıyla yüklendi.");
+            Console.WriteLine("[SEED]: Otomobil markaları ve modelleri yüklendi.");
         }
+
+        // 5. Arazi, SUV & Pickup Ağacı
+        var suvCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "arazi-suv-pickup" && !c.IsDeleted);
+        if (suvCat == null)
+        {
+            suvCat = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddAsync(suvCat);
+            await context.SaveChangesAsync();
+        }
+
+        bool hasSuvBrands = await context.Categories.AnyAsync(c => c.ParentCategoryId == suvCat.Id && !c.IsDeleted);
+        if (!hasSuvBrands)
+        {
+            var suvBrands = new Dictionary<string, string[]>
+            {
+                ["DACIA"] = new[] { "Duster", "Sandero Stepway", "Bigster" },
+                ["NISSAN"] = new[] { "Qashqai", "X-Trail", "Juke" },
+                ["CHERY"] = new[] { "Tiggo 7 Pro", "Tiggo 8 Pro", "Omoda 5" },
+                ["PEUGEOT"] = new[] { "2008", "3008", "5008" },
+                ["VOLKSWAGEN"] = new[] { "Tiguan", "T-Roc", "Taigo", "Touareg" },
+                ["HYUNDAI"] = new[] { "Tucson", "Bayon", "Kona", "Santa Fe" },
+                ["TOYOTA"] = new[] { "C-HR", "RAV4", "Corolla Cross", "Yaris Cross", "Land Cruiser" },
+                ["JEEP"] = new[] { "Renegade", "Compass", "Wrangler", "Grand Cherokee" },
+                ["KIA"] = new[] { "Sportage", "Stonic", "XCeed", "Sorento" },
+                ["BMW"] = new[] { "X1", "X2", "X3", "X4", "X5", "X6", "X7" },
+                ["MERCEDES-BENZ"] = new[] { "GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi" },
+                ["AUDI"] = new[] { "Q2", "Q3", "Q5", "Q7", "Q8" }
+            };
+
+            var suvList = new List<Category>();
+            int order = 1;
+            foreach (var kvp in suvBrands)
+            {
+                var bCat = new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = kvp.Key,
+                    Slug = Slugify($"suv-{kvp.Key}"),
+                    ParentCategoryId = suvCat.Id,
+                    DisplayOrder = order++,
+                    IsLeaf = false,
+                    IsDeleted = false
+                };
+                suvList.Add(bCat);
+
+                int modelOrder = 1;
+                foreach (var model in kvp.Value)
+                {
+                    var mCat = new Category
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = model,
+                        Slug = Slugify($"suv-{kvp.Key}-{model}"),
+                        ParentCategoryId = bCat.Id,
+                        DisplayOrder = modelOrder++,
+                        IsLeaf = false,
+                        IsDeleted = false
+                    };
+                    suvList.Add(mCat);
+                    suvList.AddRange(GeneratePackagesForSeries(kvp.Key, model, mCat.Id, true, false));
+                }
+            }
+
+            await context.Categories.AddRangeAsync(suvList);
+            await context.SaveChangesAsync();
+            Console.WriteLine("[SEED]: Arazi, SUV & Pickup modelleri yüklendi.");
+        }
+
+        // 6. Kamyonet & Hafif Ticari Ağacı
+        var ticariCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "kamyonet-hafif-ticari" && !c.IsDeleted);
+        if (ticariCat == null)
+        {
+            ticariCat = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false, IsDeleted = false };
+            await context.Categories.AddAsync(ticariCat);
+            await context.SaveChangesAsync();
+        }
+
+        bool hasTicariBrands = await context.Categories.AnyAsync(c => c.ParentCategoryId == ticariCat.Id && !c.IsDeleted);
+        if (!hasTicariBrands)
+        {
+            var comBrands = new Dictionary<string, string[]>
+            {
+                ["FORD"] = new[] { "Tourneo Courier", "Tourneo Connect", "Tourneo Custom", "Transit", "Transit Custom", "Ranger" },
+                ["FIAT"] = new[] { "Doblo Combi", "Doblo Cargo", "Fiorino Combi", "Fiorino Cargo", "Ducato" },
+                ["RENAULT"] = new[] { "Kangoo Multix", "Kangoo Express", "Trafic", "Master" },
+                ["VOLKSWAGEN"] = new[] { "Caddy", "Transporter", "Caravelle", "Crafter", "Amarok" },
+                ["PEUGEOT"] = new[] { "Rifter", "Partner", "Expert", "Boxer" },
+                ["CITROEN"] = new[] { "Berlingo", "Jumpy", "Jumper" },
+                ["OPEL"] = new[] { "Combo Life", "Combo Cargo", "Vivaro", "Movano" },
+                ["TOYOTA"] = new[] { "Hilux", "Proace City" }
+            };
+
+            var comList = new List<Category>();
+            int order = 1;
+            foreach (var kvp in comBrands)
+            {
+                var bCat = new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = kvp.Key,
+                    Slug = Slugify($"ticari-{kvp.Key}"),
+                    ParentCategoryId = ticariCat.Id,
+                    DisplayOrder = order++,
+                    IsLeaf = false,
+                    IsDeleted = false
+                };
+                comList.Add(bCat);
+
+                int modelOrder = 1;
+                foreach (var model in kvp.Value)
+                {
+                    var mCat = new Category
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = model,
+                        Slug = Slugify($"ticari-{kvp.Key}-{model}"),
+                        ParentCategoryId = bCat.Id,
+                        DisplayOrder = modelOrder++,
+                        IsLeaf = false,
+                        IsDeleted = false
+                    };
+                    comList.Add(mCat);
+                    comList.AddRange(GeneratePackagesForSeries(kvp.Key, model, mCat.Id, false, true));
+                }
+            }
+
+            await context.Categories.AddRangeAsync(comList);
+            await context.SaveChangesAsync();
+            Console.WriteLine("[SEED]: Kamyonet & Hafif Ticari modelleri yüklendi.");
+        }
+    }
+
+    private static List<Category> GeneratePackagesForSeries(string brand, string series, Guid seriesId, bool isSuv, bool isCommercial)
+    {
+        var list = new List<Category>();
+        string b = brand.ToLowerInvariant();
+        string s = series.ToLowerInvariant();
+
+        bool isEv = s.Contains("e-tron") || s.Contains("eq") || s.Contains("ev") || s.Contains("id.") ||
+                    s.Contains("taycan") || b == "tesla" || b == "togg" || b == "byd" || s == "ami";
+
+        string body = isCommercial ? "Kamyonet/Van" : (isSuv ? "SUV" : "Sedan");
+        string traction = isSuv ? "4x4" : "Önden Çekiş";
+
+        if (isEv)
+        {
+            list.Add(new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{series} Standart Menzil (RWD)",
+                Slug = Slugify($"{brand}-{series}-standart-rwd"),
+                ParentCategoryId = seriesId,
+                IsLeaf = true,
+                IsDeleted = false,
+                DefaultFuelType = "Elektrik",
+                DefaultTransmission = "Otomatik",
+                DefaultBodyType = body,
+                DefaultTractionType = "Arkadan İtiş",
+                DefaultEngineCapacityCc = 0,
+                DefaultEnginePowerHp = 204
+            });
+            list.Add(new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{series} Long Range Dual Motor (AWD)",
+                Slug = Slugify($"{brand}-{series}-long-range-awd"),
+                ParentCategoryId = seriesId,
+                IsLeaf = true,
+                IsDeleted = false,
+                DefaultFuelType = "Elektrik",
+                DefaultTransmission = "Otomatik",
+                DefaultBodyType = body,
+                DefaultTractionType = "4x4",
+                DefaultEngineCapacityCc = 0,
+                DefaultEnginePowerHp = 350
+            });
+        }
+        else
+        {
+            list.Add(new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{series} 1.0 / 1.5 Benzinli Otomatik",
+                Slug = Slugify($"{brand}-{series}-benzin-otomatik"),
+                ParentCategoryId = seriesId,
+                IsLeaf = true,
+                IsDeleted = false,
+                DefaultFuelType = "Benzin",
+                DefaultTransmission = "Otomatik",
+                DefaultBodyType = body,
+                DefaultTractionType = traction,
+                DefaultEngineCapacityCc = 1498,
+                DefaultEnginePowerHp = 150
+            });
+
+            list.Add(new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{series} 1.5 / 2.0 Dizel Manuel",
+                Slug = Slugify($"{brand}-{series}-dizel-manuel"),
+                ParentCategoryId = seriesId,
+                IsLeaf = true,
+                IsDeleted = false,
+                DefaultFuelType = "Dizel",
+                DefaultTransmission = "Manuel",
+                DefaultBodyType = body,
+                DefaultTractionType = traction,
+                DefaultEngineCapacityCc = 1598,
+                DefaultEnginePowerHp = 115
+            });
+
+            list.Add(new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = $"{series} 1.6 / 1.8 Hibrit & ECO Otomatik",
+                Slug = Slugify($"{brand}-{series}-hibrit-otomatik"),
+                ParentCategoryId = seriesId,
+                IsLeaf = true,
+                IsDeleted = false,
+                DefaultFuelType = (b == "dacia" || b == "fiat" || b == "honda") ? "LPG & Benzin" : "Hibrit",
+                DefaultTransmission = "Otomatik",
+                DefaultBodyType = body,
+                DefaultTractionType = traction,
+                DefaultEngineCapacityCc = 1598,
+                DefaultEnginePowerHp = 130
+            });
+        }
+
+        return list;
+    }
+
+    private static Dictionary<string, string[]> GetRawBrandCatalog()
+    {
+        return new Dictionary<string, string[]>
+        {
+            ["AUDI"] = new[] { "A1", "A3", "A4", "A5", "A6", "A7", "A8", "RS3", "RS6", "TT", "R8" },
+            ["BMW"] = new[] { "1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "6 Serisi", "7 Serisi", "8 Serisi", "M3", "M4", "M5", "Z4" },
+            ["MERCEDES-BENZ"] = new[] { "A Serisi", "B Serisi", "C Serisi", "E Serisi", "S Serisi", "CLA", "CLE", "CLS", "AMG GT", "SL" },
+            ["RENAULT"] = new[] { "Clio", "Megane", "Megane Sedan", "Symbol", "Fluence", "Taliant", "Austral", "Toros", "R 12", "R 9", "R 19" },
+            ["VOLKSWAGEN"] = new[] { "Polo", "Golf", "Passat", "Passat Variant", "Jetta", "Arteon", "ID.3", "ID.4", "ID.7" },
+            ["TOYOTA"] = new[] { "Yaris", "Corolla", "Corolla Cross", "Camry", "Prius", "Auris" },
+            ["HONDA"] = new[] { "Civic", "City", "Accord", "Jazz" },
+            ["FIAT"] = new[] { "Egea Sedan", "Egea Hatchback", "Egea Cross", "500", "Punto", "Linea", "Bravo", "Palio", "Albea" },
+            ["TOFAS"] = new[] { "Şahin", "Doğan", "Kartal", "Murat 131", "Murat 124", "Serçe" },
+            ["FORD"] = new[] { "Fiesta", "Focus", "Mondeo", "Mustang" },
+            ["HYUNDAI"] = new[] { "i10", "i20", "i30", "Elantra", "Accent Era", "Getz" },
+            ["PEUGEOT"] = new[] { "206", "207", "208", "301", "308", "408", "508" },
+            ["CITROEN"] = new[] { "C3", "C4", "C4 X", "C5", "C-Elysee", "Ami" },
+            ["OPEL"] = new[] { "Corsa", "Astra", "Insignia", "Vectra" },
+            ["SKODA"] = new[] { "Fabia", "Scala", "Octavia", "Superb", "Rapid" },
+            ["KIA"] = new[] { "Picanto", "Rio", "Ceed", "Cerato" },
+            ["VOLVO"] = new[] { "S60", "S90", "V40", "V60", "V90" },
+            ["TESLA"] = new[] { "Model 3", "Model S" },
+            ["TOGG"] = new[] { "T10F" },
+            ["SEAT"] = new[] { "Ibiza", "Leon", "Toledo" },
+            ["CUPRA"] = new[] { "Leon", "Born" }
+        };
     }
 
     private static List<string> GetRealisticNeighborhoodsForDistrict(string city, string district)
     {
         if (city == "Ankara" && district == "Çankaya")
-            return new List<string> { "Kızılay Mah.", "Ayrancı Mah.", "Bahçelievler Mah.", "Tunalı Hilmi Mah.", "Çukurambar Mah.", "Ümitköy Mah.", "Bilkent Mah." };
+            return new List<string> { "Kızılay", "Ayrancı", "Bahçelievler", "Tunalı Hilmi", "Çukurambar", "Ümitköy", "Bilkent", "Gaziosmanpaşa", "Yıldız", "Balgat", "Söğütözü", "Oran", "Maltepe", "Dikmen", "Kavaklıdere" };
         if (city == "Ankara" && district == "Yenimahalle")
-            return new List<string> { "Batıkent Mah.", "Demetevler Mah.", "Çayyolu Mah.", "Ostim Mah.", "Ergazi Mah." };
+            return new List<string> { "Batıkent", "Demetevler", "Çayyolu", "Ostim", "Ergazi", "Şentepe", "İvedik", "Karşıyaka", "Uğur Mumcu", "Yeni Batı" };
         if (city == "İstanbul" && district == "Kadıköy")
-            return new List<string> { "Moda Mah.", "Caddebostan Mah.", "Fenerbahçe Mah.", "Suadiye Mah.", "Bostancı Mah." };
+            return new List<string> { "Moda", "Caddebostan", "Fenerbahçe", "Suadiye", "Bostancı", "Göztepe", "Erenköy", "Kozyatağı", "Fikirtepe", "Acıbadem" };
         if (city == "İzmir" && district == "Karşıyaka")
-            return new List<string> { "Bostanlı Mah.", "Mavişehir Mah.", "Alaybey Mah.", "Aksoy Mah." };
+            return new List<string> { "Bostanlı", "Mavişehir", "Alaybey", "Aksoy", "Bahçelievler" };
 
-        return new List<string> { "Merkez Mah.", "Cumhuriyet Mah.", "Yeni Mah.", "Atatürk Mah.", "Fatih Mah.", "İnönü Mah.", "Zafer Mah." };
+        return new List<string>
+        {
+            "Merkez Mah.", "Cumhuriyet Mah.", "Yeni Mah.", "Atatürk Mah.", "Fatih Mah.",
+            "İnönü Mah.", "Zafer Mah.", "Hürriyet Mah.", "Yıldız Mah.", "Barış Mah.",
+            "Gazi Mah.", "Yeşiltepe Mah.", "Bahçelievler Mah.", "Çamlık Mah."
+        };
     }
 
     private static List<(int PlateCode, string CityName, string[] Districts)> GetTurkeyLocationCatalog()
@@ -313,195 +498,6 @@ public static class DatabaseSeeder
             (79, "Kilis", new[] { "Elbeyli", "Merkez", "Musabeyli", "Polateli" }),
             (80, "Osmaniye", new[] { "Bahçe", "Düziçi", "Hasanbeyli", "Kadirli", "Merkez", "Sumbas", "Toprakkale" }),
             (81, "Düzce", new[] { "Akçakoca", "Cumayeri", "Çilimli", "Gölyaka", "Gümüşova", "Kaynaşlı", "Merkez", "Yığılca" })
-        };
-    }
-
-    private static bool IsSuvName(string name)
-    {
-        var n = name.ToLowerInvariant();
-        return n.StartsWith("q") || n.StartsWith("x") || n.StartsWith("gl") || n.Contains("cross") ||
-               n.Contains("suv") || n.Contains("duster") || n.Contains("tucson") || n.Contains("sportage") ||
-               n.Contains("tiguan") || n.Contains("kuga") || n.Contains("puma") || n.Contains("qashqai") ||
-               n.Contains("rav4") || n.Contains("defender") || n.Contains("range rover") || n.Contains("cherokee") ||
-               n.Contains("wrangler") || n.Contains("t10x") || n.Contains("model y") || n.Contains("formentor") ||
-               n.Contains("omoda") || n.Contains("tiggo") || n.Contains("atto") || n.Contains("sealion") ||
-               n.Contains("cayenne") || n.Contains("macan") || n.Contains("urus") || n.Contains("bentayga");
-    }
-
-    private static bool IsCommercialName(string name)
-    {
-        var n = name.ToLowerInvariant();
-        return n.Contains("caddy") || n.Contains("transporter") || n.Contains("caravelle") || n.Contains("multivan") ||
-               n.Contains("kangoo") || n.Contains("trafic") || n.Contains("master") || n.Contains("doblo") ||
-               n.Contains("fiorino") || n.Contains("ducato") || n.Contains("transit") || n.Contains("courier") ||
-               n.Contains("custom") || n.Contains("ranger") || n.Contains("hilux") || n.Contains("l200") ||
-               n.Contains("navara") || n.Contains("berlingo") || n.Contains("partner") || n.Contains("rifter") ||
-               n.Contains("combo") || n.Contains("proace");
-    }
-
-    private static List<Category> GeneratePackagesForSeries(string brand, string series, Guid seriesId, bool isSuv, bool isCommercial)
-    {
-        var list = new List<Category>();
-        string b = brand.ToLowerInvariant();
-        string s = series.ToLowerInvariant();
-
-        bool isEv = s.Contains("e-tron") || s.Contains("eq") || s.Contains("ev") || s.Contains("id.") ||
-                    s.Contains("taycan") || b == "tesla" || b == "togg" || b == "byd" || s == "ami";
-
-        string body = isCommercial ? "Kamyonet/Van" : (isSuv ? "SUV" : "Sedan");
-        string traction = isSuv ? "4x4" : "Önden Çekiş";
-
-        if (isEv)
-        {
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} Standart Menzil (RWD)",
-                Slug = Slugify($"{brand}-{series}-standart-rwd"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = "Elektrik",
-                DefaultTransmission = "Otomatik",
-                DefaultBodyType = body,
-                DefaultTractionType = "Arkadan İtiş",
-                DefaultEngineCapacityCc = 0,
-                DefaultEnginePowerHp = 204
-            });
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} Long Range Dual Motor (AWD)",
-                Slug = Slugify($"{brand}-{series}-long-range-awd"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = "Elektrik",
-                DefaultTransmission = "Otomatik",
-                DefaultBodyType = body,
-                DefaultTractionType = "4x4",
-                DefaultEngineCapacityCc = 0,
-                DefaultEnginePowerHp = 350
-            });
-        }
-        else if (b == "ferrari" || b == "lamborghini" || b == "aston martin" || b == "bentley" || b == "porsche" || b == "maserati" || b == "mclaren")
-        {
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} V8 Bi-Turbo Performance",
-                Slug = Slugify($"{brand}-{series}-v8-biturbo"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = "Benzin",
-                DefaultTransmission = "Otomatik",
-                DefaultBodyType = isSuv ? "SUV" : "Coupe",
-                DefaultTractionType = "4x4",
-                DefaultEngineCapacityCc = 3996,
-                DefaultEnginePowerHp = 650
-            });
-        }
-        else
-        {
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} 1.0 / 1.5 Benzinli Otomatik",
-                Slug = Slugify($"{brand}-{series}-benzin-otomatik"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = "Benzin",
-                DefaultTransmission = "Otomatik",
-                DefaultBodyType = body,
-                DefaultTractionType = traction,
-                DefaultEngineCapacityCc = 1498,
-                DefaultEnginePowerHp = 150
-            });
-
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} 1.5 / 2.0 Dizel Manuel",
-                Slug = Slugify($"{brand}-{series}-dizel-manuel"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = "Dizel",
-                DefaultTransmission = "Manuel",
-                DefaultBodyType = body,
-                DefaultTractionType = traction,
-                DefaultEngineCapacityCc = 1598,
-                DefaultEnginePowerHp = 115
-            });
-
-            list.Add(new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{series} 1.6 / 1.8 Hibrit & ECO Otomatik",
-                Slug = Slugify($"{brand}-{series}-hibrit-otomatik"),
-                ParentCategoryId = seriesId,
-                IsLeaf = true,
-                IsDeleted = false,
-                DefaultFuelType = (b == "dacia" || b == "fiat" || b == "honda") ? "LPG & Benzin" : "Hibrit",
-                DefaultTransmission = "Otomatik",
-                DefaultBodyType = body,
-                DefaultTractionType = traction,
-                DefaultEngineCapacityCc = 1598,
-                DefaultEnginePowerHp = 130
-            });
-        }
-
-        return list;
-    }
-
-    private static Dictionary<string, string[]> GetRawBrandCatalog()
-    {
-        return new Dictionary<string, string[]>
-        {
-            ["AUDI"] = new[] { "A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4 e-tron", "Q5", "Q6 e-tron", "Q7", "Q8", "e-tron", "e-tron GT", "RS3", "RS4", "RS5", "RS6", "RS7", "RS Q3", "RS Q8", "S3", "S4", "S5", "S6", "S7", "S8", "TT", "R8" },
-            ["BMW"] = new[] { "1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "6 Serisi", "7 Serisi", "8 Serisi", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "XM", "Z4", "iX1", "iX2", "iX3", "i4", "i5", "i7", "iX", "i3", "M2", "M3", "M4", "M5", "M8" },
-            ["MERCEDES-BENZ"] = new[] { "A Serisi", "B Serisi", "C Serisi", "E Serisi", "S Serisi", "CLA", "CLE", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi", "EQA", "EQB", "EQC", "EQE", "EQE SUV", "EQS", "EQS SUV", "AMG GT", "SL" },
-            ["RENAULT"] = new[] { "Clio", "Clio E-Tech", "Megane", "Megane E-Tech", "Megane Sedan", "Symbol", "Fluence", "Taliant", "Captur", "Arkana", "Austral", "Kadjar", "Koleos", "Duster", "Espace", "Scenic", "Rafale", "5 E-Tech", "Toros", "R 12", "R 9", "R 19", "Kangoo", "Kangoo Multix", "Kangoo Van", "Trafic", "Master" },
-            ["VOLKSWAGEN"] = new[] { "Polo", "Golf", "Golf Variant", "Passat", "Passat Variant", "Jetta", "Arteon", "T-Roc", "T-Cross", "Taigo", "Tiguan", "Touareg", "Touran", "Caddy", "Transporter", "Caravelle", "Multivan", "ID.3", "ID.4", "ID.5", "ID.7", "ID.7 Tourer", "ID.Buzz" },
-            ["TOYOTA"] = new[] { "Yaris", "Yaris Hybrid", "Yaris Cross", "Corolla", "Corolla Hybrid", "Corolla Hatchback", "Corolla Touring Sports", "Camry", "C-HR", "C-HR Hybrid", "RAV4", "RAV4 Hybrid", "Highlander", "Land Cruiser", "Land Cruiser Prado", "Aygo", "Aygo X", "Prius", "bZ4X", "Proace", "Proace City", "Hilux" },
-            ["HONDA"] = new[] { "Civic", "City", "Jazz", "Jazz Crosstar", "HR-V", "ZR-V", "CR-V", "e:Ny1", "Accord", "Prelude" },
-            ["FIAT"] = new[] { "Egea Sedan", "Egea Hatchback", "Egea Cross", "Egea Cross Wagon", "500", "500e", "500X", "500L", "Panda", "Grande Panda", "Tipo", "Punto", "Linea", "Bravo", "Albea", "Palio", "Doblo", "Fiorino", "Ducato" },
-            ["TOFAS"] = new[] { "Şahin", "Doğan", "Kartal", "Murat 131", "Murat 124", "Serçe" },
-            ["FORD"] = new[] { "Fiesta", "Focus", "Mondeo", "Puma", "Kuga", "EcoSport", "Explorer", "Capri", "Mustang", "Mustang Mach-E", "Bronco", "Ranger", "Ranger Raptor", "Transit", "Tourneo Courier", "Tourneo Connect", "Tourneo Custom", "Transit Custom" },
-            ["HYUNDAI"] = new[] { "i10", "i20", "i20 N", "i30", "Bayon", "Kona", "Kona Electric", "Tucson", "Santa Fe", "Ioniq", "Ioniq 5", "Ioniq 6", "Ioniq 9", "Nexo", "Staria", "Getz", "Accent", "Accent Era", "Elantra" },
-            ["PEUGEOT"] = new[] { "108", "206", "207", "208", "e-208", "2008", "e-2008", "301", "307", "308", "308 SW", "408", "508", "3008", "e-3008", "5008", "e-5008", "Partner", "Rifter", "Expert", "Boxer" },
-            ["CITROEN"] = new[] { "C1", "C2", "C3", "C3 Aircross", "C4", "C4 X", "C5", "C5 Aircross", "C5 X", "C-Elysee", "Berlingo", "Jumpy", "Jumper", "Ami", "e-C3", "e-C4", "e-C4 X" },
-            ["OPEL"] = new[] { "Corsa", "Astra", "Astra Sports Tourer", "Mokka", "Crossland", "Frontera", "Grandland", "Insignia", "Vectra", "Combo", "Vivaro", "Movano" },
-            ["SKODA"] = new[] { "Fabia", "Scala", "Rapid", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq", "Enyaq", "Enyaq Coupe", "Elroq", "Kushaq" },
-            ["KIA"] = new[] { "Picanto", "Rio", "Ceed", "Ceed SW", "Proceed", "Stonic", "XCeed", "Niro", "Niro EV", "Sportage", "Sorento", "EV3", "EV4", "EV5", "EV6", "EV9", "Carnival", "Cerato" },
-            ["NISSAN"] = new[] { "Micra", "Juke", "Qashqai", "X-Trail", "Ariya", "Leaf", "Navara", "Townstar", "Primera", "Almera" },
-            ["VOLVO"] = new[] { "EX30", "EX40", "EC40", "EX90", "XC40", "XC60", "XC90", "S40", "S60", "S90", "V40", "V60", "V90", "C40" },
-            ["TESLA"] = new[] { "Model 3", "Model Y", "Model S", "Model X", "Cybertruck" },
-            ["TOGG"] = new[] { "T10X", "T10F" },
-            ["BYD"] = new[] { "Atto 2", "Atto 3", "Dolphin", "Dolphin Surf", "Seal", "Seal U", "Seal U DM-i", "Sealion 7", "Han", "Tang" },
-            ["CHERY"] = new[] { "Tiggo 4", "Tiggo 7", "Tiggo 8", "Omoda 5", "Omoda 5 EV" },
-            ["MG"] = new[] { "MG3", "MG4", "MG5", "MG ZS", "MG ZS EV", "MG HS", "MG EHS", "MG7", "Cyberster" },
-            ["DACIA"] = new[] { "Sandero", "Sandero Stepway", "Logan", "Duster", "Jogger", "Spring", "Bigster", "Lodgy", "Dokker" },
-            ["JEEP"] = new[] { "Renegade", "Compass", "Avenger", "Cherokee", "Grand Cherokee", "Wrangler", "Gladiator" },
-            ["CUPRA"] = new[] { "Leon", "Formentor", "Ateca", "Born", "Tavascan", "Terramar" },
-            ["SEAT"] = new[] { "Ibiza", "Leon", "Arona", "Ateca", "Tarraco", "Toledo" },
-            ["SUZUKI"] = new[] { "Swift", "Swift Sport", "Ignis", "Baleno", "Vitara", "Grand Vitara", "S-Cross", "Jimny", "Across" },
-            ["MITSUBISHI"] = new[] { "Colt", "Lancer", "ASX", "Eclipse Cross", "Outlander", "Pajero", "L200", "Space Star" },
-            ["SUBARU"] = new[] { "Impreza", "XV", "Crosstrek", "Forester", "Outback", "Solterra", "WRX", "BRZ" },
-            ["MAZDA"] = new[] { "Mazda 2", "Mazda 3", "Mazda 6", "CX-3", "CX-30", "CX-5", "CX-60", "CX-80", "MX-5", "MX-30" },
-            ["LEXUS"] = new[] { "LBX", "UX", "UX 300e", "NX", "RX", "RZ", "ES", "LS", "LC", "LM" },
-            ["ALFA ROMEO"] = new[] { "Giulietta", "Giulia", "Stelvio", "Tonale", "Junior", "156", "159", "4C" },
-            ["PORSCHE"] = new[] { "911", "718 Cayman", "718 Boxster", "Taycan", "Panamera", "Macan", "Cayenne" },
-            ["JAGUAR"] = new[] { "XE", "XF", "XJ", "F-Pace", "E-Pace", "I-Pace", "F-Type" },
-            ["LAND ROVER"] = new[] { "Defender", "Discovery", "Discovery Sport", "Range Rover", "Range Rover Sport", "Range Rover Velar", "Range Rover Evoque", "Freelander" },
-            ["MASERATI"] = new[] { "Ghibli", "Quattroporte", "Levante", "Grecale", "GranTurismo", "GranCabrio", "MC20" },
-            ["MINI"] = new[] { "Cooper", "Cooper 3 Door", "Cooper 5 Door", "Countryman", "Clubman", "Paceman", "Aceman" },
-            ["FERRARI"] = new[] { "Roma", "Roma Spider", "296 GTB", "296 GTS", "SF90 Stradale", "SF90 Spider", "12Cilindri", "Purosangue", "812 Superfast", "F8 Tributo" },
-            ["LAMBORGHINI"] = new[] { "Huracan", "Revuelto", "Urus", "Aventador", "Gallardo" },
-            ["ASTON MARTIN"] = new[] { "Vantage", "DB12", "DBS", "DBX", "Vanquish" },
-            ["BENTLEY"] = new[] { "Continental GT", "Continental GTC", "Flying Spur", "Bentayga" }
         };
     }
 
