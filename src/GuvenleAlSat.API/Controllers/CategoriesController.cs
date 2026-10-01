@@ -30,32 +30,10 @@ public class CategoriesController : ControllerBase
         return Ok(new { success = true, data = roots });
     }
 
-    [HttpGet("{parentId:guid}/subcategories")]
-    public async Task<IActionResult> GetSubCategories(Guid parentId)
-    {
-        var subs = await _context.Categories
-            .Where(c => c.ParentCategoryId == parentId && !c.IsDeleted)
-            .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
-            .Select(c => new
-            {
-                c.Id,
-                c.Name,
-                c.Slug,
-                c.IsLeaf,
-                c.DefaultFuelType,
-                c.DefaultTransmission,
-                c.DefaultEngineCapacityCc,
-                c.DefaultEnginePowerHp,
-                c.DefaultBodyType
-            })
-            .ToListAsync();
-
-        return Ok(new { success = true, data = subs });
-    }
-
-    // Doğrudan Araç Kategori Ağacı (Otomobil, SUV, Ticari ve altındaki 40+ Marka)
+    // Hem vehicle-catalog hem vehicle-tree isteklerini tek seferde karşılar
+    [HttpGet("vehicle-catalog")]
     [HttpGet("vehicle-tree")]
-    public async Task<IActionResult> GetVehicleTree()
+    public async Task<IActionResult> GetVehicleCatalog()
     {
         var vasita = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
         if (vasita == null) return Ok(new { success = true, data = new List<object>() });
@@ -78,6 +56,29 @@ public class CategoriesController : ControllerBase
             .ToListAsync();
 
         return Ok(new { success = true, data = categories });
+    }
+
+    [HttpGet("{parentId:guid}/subcategories")]
+    public async Task<IActionResult> GetSubCategories(Guid parentId)
+    {
+        var subs = await _context.Categories
+            .Where(c => c.ParentCategoryId == parentId && !c.IsDeleted)
+            .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
+            .Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.Slug,
+                c.IsLeaf,
+                c.DefaultFuelType,
+                c.DefaultTransmission,
+                c.DefaultEngineCapacityCc,
+                c.DefaultEnginePowerHp,
+                c.DefaultBodyType
+            })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = subs });
     }
 
     [HttpGet("by-slug/{slug}/subcategories")]
@@ -111,7 +112,12 @@ public class CategoriesController : ControllerBase
 
         return Ok(result);
     }
-
+    [HttpGet("force-seed-suv-commercial")]
+    public async Task<IActionResult> ForceSeedSuvAndCommercial()
+    {
+        await GuvenleAlSat.DataAccess.Seeds.DatabaseSeeder.SeedAsync(_context);
+        return Ok(new { success = true, message = "SUV ve Ticari markalar başarıyla veritabanına işlendi!" });
+    }
     [HttpGet("filter-options")]
     public async Task<IActionResult> GetFilterOptions()
     {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { ShieldCheck, Phone, MessageSquare, Send, X, ExternalLink } from 'lucide-react';
-
+import { getFullImageUrl } from '../services/api';
 const getCleanImageUrl = (url?: string | null): string => {
   if (!url || typeof url !== 'string' || url.trim() === '') {
     return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80';
@@ -225,7 +225,15 @@ export const ListingDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
+// Kullanım:
+<img 
+  src={getFullImageUrl(listing.mainImageUrl || listing.imageUrl)} 
+  alt={listing.title}
+  className="w-full h-full object-cover"
+  onError={(e: any) => {
+    e.target.src = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=60';
+  }}
+/>
             <div className="pt-2 border-t space-y-2">
               {/* Telefon Butonu */}
               {phone ? (

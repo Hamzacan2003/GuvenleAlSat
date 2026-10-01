@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "u3OfDJVCorA=",
+  "dgSpecHash": "0whV+ucz3Es=",
   "success": true,
   "projectFilePath": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.API\\GuvenleAlSat.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\awssdk.core\\4.0.102.6\\awssdk.core.4.0.102.6.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\awssdk.s3\\4.0.103.4\\awssdk.s3.4.0.103.4.nupkg.sha512",
+    "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\cloudinarydotnet\\1.29.3\\cloudinarydotnet.1.29.3.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\fluentvalidation\\11.11.0\\fluentvalidation.11.11.0.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\fluentvalidation.aspnetcore\\11.3.1\\fluentvalidation.aspnetcore.11.3.1.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\11.11.0\\fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { getFullImageUrl } from '../services/api';
 
 const getCleanImageUrl = (url?: string | null): string => {
   if (!url || typeof url !== 'string' || url.trim() === '') {
@@ -164,7 +165,15 @@ export const HomePage: React.FC = () => {
       }
     });
   };
-
+// Kullanım:
+<img 
+  src={getFullImageUrl(listing.mainImageUrl || listing.imageUrl)} 
+  alt={listing.title}
+  className="w-full h-full object-cover"
+  onError={(e: any) => {
+    e.target.src = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=60';
+  }}
+/>
   const toggleArray = (val: string, list: string[], setList: (v: string[]) => void) => {
     if (list.includes(val)) setList(list.filter((x) => x !== val));
     else setList([...list, val]);

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GuvenleAlSat.API.Controllers;
@@ -7,11 +9,19 @@ namespace GuvenleAlSat.API.Controllers;
 [ApiController]
 public class ImagesController : ControllerBase
 {
-    private readonly IWebHostEnvironment _env;
+    private readonly Cloudinary _cloudinary;
 
-    public ImagesController(IWebHostEnvironment env)
+    public ImagesController(IConfiguration configuration)
     {
-        _env = env;
+        // Render Dashboard > Environment Variables içine ekleyebilirsiniz:
+        // CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+        var cloudName = configuration["Cloudinary:CloudName"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? "BURAYA_CLOUD_NAME";
+        var apiKey = configuration["Cloudinary:ApiKey"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? "BURAYA_API_KEY";
+        var apiSecret = configuration["Cloudinary:ApiSecret"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? "BURAYA_API_SECRET";
+
+        var account = new Account(cloudName, apiKey, apiSecret);
+        _cloudinary = new Cloudinary(account);
+        _cloudinary.Api.Secure = true;
     }
 
     [HttpPost("upload-multiple")]
@@ -21,13 +31,8 @@ public class ImagesController : ControllerBase
         if (files == null || files.Count == 0)
             return BadRequest(new { success = false, message = "Lütfen en az bir fotoğraf seçin." });
 
-        if (files.Count > 10)
-            return BadRequest(new { success = false, message = "Standart hesapla en fazla 10 fotoğraf yükleyebilirsiniz." });
-
-        var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var uploadDir = Path.Combine(webRoot, "uploads");
-        if (!Directory.Exists(uploadDir))
-            Directory.CreateDirectory(uploadDir);
+        if (files.Count > 20)
+            return BadRequest(new { success = false, message = "En fazla 20 fotoğraf yükleyebilirsiniz." });
 
         var uploadedUrls = new List<string>();
 
@@ -40,18 +45,24 @@ public class ImagesController : ControllerBase
                 if (!allowedExtensions.Contains(extension))
                     continue;
 
-                var fileName = $"{Guid.NewGuid()}{extension}";
-                var filePath = Path.Combine(uploadDir, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                using var stream = file.OpenReadStream();
+                var uploadParams = new ImageUploadParams
                 {
-                    await file.CopyToAsync(stream);
-                }
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = "guvenle-al-sat",
+                    Transformation = new Transformation().Quality("auto").FetchFormat("auto")
+                };
 
-                var baseUrl = $"{Request.Scheme}://{Request.Host}";
-                uploadedUrls.Add($"{baseUrl}/uploads/{fileName}");
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult?.SecureUrl != null)
+                {
+                    uploadedUrls.Add(uploadResult.SecureUrl.ToString());
+                }
             }
         }
+
+        if (uploadedUrls.Count == 0)
+            return BadRequest(new { success = false, message = "Fotoğraflar yüklenemedi." });
 
         return Ok(new { success = true, data = uploadedUrls });
     }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import { Eye, PlusCircle, Zap, Trash2, Edit } from 'lucide-react';
-
+import { getFullImageUrl } from '../services/api';
 export const MyListingsPage: React.FC = () => {
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,15 @@ export const MyListingsPage: React.FC = () => {
       alert('Doping işlemi uygulanamadı.');
     }
   };
-
+// Kullanım:
+<img 
+  src={getFullImageUrl(listing.mainImageUrl || listing.imageUrl)} 
+  alt={listing.title}
+  className="w-full h-full object-cover"
+  onError={(e: any) => {
+    e.target.src = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&auto=format&fit=crop&q=60';
+  }}
+/>
   const handleDelete = async (id: string, listingNo: number) => {
     if (!confirm(`#${listingNo} numaralı ilanı satıldı olarak işaretleyip kalıcı olarak silmek istiyor musunuz?`)) return;
     try {
