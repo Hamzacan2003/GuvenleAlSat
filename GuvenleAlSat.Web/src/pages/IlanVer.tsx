@@ -119,26 +119,20 @@ export const IlanVer: React.FC = () => {
       const cityData = res.data?.data || res.data || [];
       if (Array.isArray(cityData) && cityData.length > 0) {
         setCities(cityData);
-        const defCity = cityData.find((c: any) => c.name === 'Ankara') || cityData[0];
-        setSelectedCityId(defCity.id);
-        setSelectedCityName(defCity.name);
-        loadDistricts(defCity.id);
+        const ankara = cityData.find((c: any) => c.name.toLowerCase() === 'ankara') || cityData[0];
+        setSelectedCityId(ankara.id);
+        setSelectedCityName(ankara.name);
+        loadDistricts(ankara.id);
       }
     });
 
-    // Kök kategorileri (Vasıta) alıp altındaki Otomobil/SUV/Ticari türlerini getir
-    api.get('/categories/roots').then((res) => {
-      const rootList = res.data?.data || res.data || [];
-      const vasita = rootList.find((c: any) => c.slug === 'vasita') || rootList[0];
-      if (vasita) {
-        api.get(`/categories/${vasita.id}/subcategories`).then((subRes) => {
-          const vTypes = subRes.data?.data || subRes.data || [];
-          setVehicleTypes(vTypes);
-          if (vTypes.length > 0) {
-            setSelectedVehicleTypeId(vTypes[0].id);
-            loadBrands(vTypes[0].id);
-          }
-        });
+    // Araç Türlerini (Otomobil, SUV, Ticari) Çek
+    api.get('/categories/vehicle-types').then((res) => {
+      const vTypes = res.data?.data || [];
+      setVehicleTypes(vTypes);
+      if (vTypes.length > 0) {
+        setSelectedVehicleTypeId(vTypes[0].id);
+        loadBrands(vTypes[0].id);
       }
     });
   }, []);
@@ -147,7 +141,7 @@ export const IlanVer: React.FC = () => {
   const loadBrands = async (vehicleTypeId: string) => {
     try {
       const res = await api.get(`/categories/${vehicleTypeId}/subcategories`);
-      const bList = res.data?.data || res.data || [];
+      const bList = res.data?.data || [];
       setBrands(bList);
       if (bList.length > 0) {
         setSelectedBrandId(bList[0].id);
@@ -159,11 +153,11 @@ export const IlanVer: React.FC = () => {
     } catch {}
   };
 
-  // Marka Değiştiğinde (Örn: Renault, BMW, Mercedes -> Modeller)
+  // Marka Değiştiğinde -> Modeller / Seriler
   const loadSeries = async (brandId: string) => {
     try {
       const res = await api.get(`/categories/${brandId}/subcategories`);
-      const sList = res.data?.data || res.data || [];
+      const sList = res.data?.data || [];
       setSeriesList(sList);
       if (sList.length > 0) {
         setSelectedSeriesId(sList[0].id);
@@ -178,7 +172,7 @@ export const IlanVer: React.FC = () => {
   const loadPackages = async (seriesId: string) => {
     try {
       const res = await api.get(`/categories/${seriesId}/subcategories`);
-      const pList = res.data?.data || res.data || [];
+      const pList = res.data?.data || [];
       setPackages(pList);
       if (pList.length > 0) {
         setSelectedPackageId(pList[0].id);
@@ -193,7 +187,7 @@ export const IlanVer: React.FC = () => {
   const loadDistricts = async (cityId: string) => {
     try {
       const res = await api.get(`/locations/districts/${cityId}`);
-      const dList = res.data?.data || res.data || [];
+      const dList = res.data?.data || [];
       setDistricts(dList);
       if (dList.length > 0) {
         setSelectedDistrictId(dList[0].id);
@@ -209,7 +203,7 @@ export const IlanVer: React.FC = () => {
   const loadNeighborhoods = async (districtId: string) => {
     try {
       const res = await api.get(`/locations/neighborhoods/${districtId}`);
-      const nList = res.data?.data || res.data || [];
+      const nList = res.data?.data || [];
       setNeighborhoods(nList);
       if (nList.length > 0) {
         setSelectedNeighborhoodName(nList[0].name);

@@ -21,26 +21,50 @@ public class CategoriesController : ControllerBase
     [HttpGet("roots")]
     public async Task<IActionResult> GetRootCategories()
     {
-        var result = await _categoryService.GetRootCategoriesAsync();
-        return Ok(result);
+        var roots = await _context.Categories
+            .Where(c => c.ParentCategoryId == null && !c.IsDeleted)
+            .OrderBy(c => c.DisplayOrder)
+            .Select(c => new { c.Id, c.Name, c.Slug, c.IsLeaf })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = roots });
     }
 
     [HttpGet("{parentId:guid}/subcategories")]
     public async Task<IActionResult> GetSubCategories(Guid parentId)
     {
-        var result = await _categoryService.GetSubCategoriesAsync(parentId);
-        return Ok(result);
+        var subs = await _context.Categories
+            .Where(c => c.ParentCategoryId == parentId && !c.IsDeleted)
+            .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
+            .Select(c => new { c.Id, c.Name, c.Slug, c.IsLeaf })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = subs });
     }
 
-    // Slug'a göre alt kategorileri getirme (Örn: /api/Categories/by-slug/otomobil/subcategories)
+    [HttpGet("vehicle-types")]
+    public async Task<IActionResult> GetVehicleTypes()
+    {
+        var vasita = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita" && !c.IsDeleted);
+        if (vasita == null) return Ok(new { success = true, data = new List<object>() });
+
+        var types = await _context.Categories
+            .Where(c => c.ParentCategoryId == vasita.Id && !c.IsDeleted)
+            .OrderBy(c => c.DisplayOrder)
+            .Select(c => new { c.Id, c.Name, c.Slug })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = types });
+    }
+
     [HttpGet("by-slug/{slug}/subcategories")]
     public async Task<IActionResult> GetSubCategoriesBySlug(string slug)
     {
-        var parent = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == slug);
+        var parent = await _context.Categories.FirstOrDefaultAsync(c => c.Slug == slug && !c.IsDeleted);
         if (parent == null) return NotFound(new { success = false, message = "Kategori bulunamadı." });
 
         var subs = await _context.Categories
-            .Where(c => c.ParentCategoryId == parent.Id)
+            .Where(c => c.ParentCategoryId == parent.Id && !c.IsDeleted)
             .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
             .Select(c => new { c.Id, c.Name, c.Slug, c.IsLeaf })
             .ToListAsync();

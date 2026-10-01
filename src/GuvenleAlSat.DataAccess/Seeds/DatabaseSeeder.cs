@@ -79,13 +79,12 @@ public static class DatabaseSeeder
             Console.WriteLine("[SEED]: 81 İl, İlçeler ve Mahalleler başarıyla yüklendi.");
         }
 
-        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (40+ Marka, Modeller ve Paketler)
-        // Eğer veritabanında araç sayısı 10'dan azsa eksik seed yapılmıştır, zorla doldur:
+        // 3. Vasıta Kategori Ağacı ve Tüm Araçlar (40+ Marka, Seriler ve Motor Paketleri)
         var otomobilCat = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "otomobil");
         int existingBrandCount = 0;
         if (otomobilCat != null)
         {
-            existingBrandCount = await context.Categories.CountAsync(c => c.ParentCategoryId == otomobilCat.Id);
+            existingBrandCount = await context.Categories.CountAsync(c => c.ParentCategoryId == otomobilCat.Id && !c.IsDeleted);
         }
 
         if (otomobilCat == null || existingBrandCount < 10)
@@ -93,7 +92,7 @@ public static class DatabaseSeeder
             var vasita = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "vasita");
             if (vasita == null)
             {
-                vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false };
+                vasita = new Category { Id = Guid.NewGuid(), Name = "Vasıta", Slug = "vasita", DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
                 await context.Categories.AddAsync(vasita);
                 await context.SaveChangesAsync();
             }
@@ -101,14 +100,14 @@ public static class DatabaseSeeder
             var emlak = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "emlak");
             if (emlak == null)
             {
-                emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false };
+                emlak = new Category { Id = Guid.NewGuid(), Name = "Emlak", Slug = "emlak", DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
                 await context.Categories.AddAsync(emlak);
                 await context.SaveChangesAsync();
             }
 
             if (otomobilCat == null)
             {
-                otomobilCat = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false };
+                otomobilCat = new Category { Id = Guid.NewGuid(), Name = "Otomobil", Slug = "otomobil", ParentCategoryId = vasita.Id, DisplayOrder = 1, IsLeaf = false, IsDeleted = false };
                 await context.Categories.AddAsync(otomobilCat);
                 await context.SaveChangesAsync();
             }
@@ -116,7 +115,7 @@ public static class DatabaseSeeder
             var suv = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "arazi-suv-pickup");
             if (suv == null)
             {
-                suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false };
+                suv = new Category { Id = Guid.NewGuid(), Name = "Arazi, SUV & Pickup", Slug = "arazi-suv-pickup", ParentCategoryId = vasita.Id, DisplayOrder = 2, IsLeaf = false, IsDeleted = false };
                 await context.Categories.AddAsync(suv);
                 await context.SaveChangesAsync();
             }
@@ -124,7 +123,7 @@ public static class DatabaseSeeder
             var ticari = await context.Categories.FirstOrDefaultAsync(c => c.Slug == "kamyonet-hafif-ticari");
             if (ticari == null)
             {
-                ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false };
+                ticari = new Category { Id = Guid.NewGuid(), Name = "Kamyonet & Hafif Ticari", Slug = "kamyonet-hafif-ticari", ParentCategoryId = vasita.Id, DisplayOrder = 3, IsLeaf = false, IsDeleted = false };
                 await context.Categories.AddAsync(ticari);
                 await context.SaveChangesAsync();
             }
@@ -132,7 +131,6 @@ public static class DatabaseSeeder
             var rawBrands = GetRawBrandCatalog();
             var allVehicleCategories = new List<Category>();
 
-            // Mevcut markaları kontrol et, sadece eksik olanları ekle
             var existingBrandNames = await context.Categories
                 .Where(c => c.ParentCategoryId == otomobilCat.Id)
                 .Select(c => c.Name.ToUpper())
@@ -153,7 +151,8 @@ public static class DatabaseSeeder
                     Slug = Slugify(brandName),
                     ParentCategoryId = otomobilCat.Id,
                     DisplayOrder = brandOrder++,
-                    IsLeaf = false
+                    IsLeaf = false,
+                    IsDeleted = false
                 };
                 allVehicleCategories.Add(brandCategory);
 
@@ -170,7 +169,8 @@ public static class DatabaseSeeder
                         Slug = Slugify($"{brandName}-{seriesName}"),
                         ParentCategoryId = brandCategory.Id,
                         DisplayOrder = seriesOrder++,
-                        IsLeaf = false
+                        IsLeaf = false,
+                        IsDeleted = false
                     };
                     allVehicleCategories.Add(seriesCategory);
 
@@ -183,7 +183,7 @@ public static class DatabaseSeeder
             {
                 await context.Categories.AddRangeAsync(allVehicleCategories);
                 await context.SaveChangesAsync();
-                Console.WriteLine("[SEED]: Tüm araç hiyerarşisi (40+ marka, seriler, paketler) başarıyla yüklendi.");
+                Console.WriteLine("[SEED]: 40+ Marka, seriler ve motor paketleri eksiksiz yüklendi.");
             }
         }
     }
@@ -343,6 +343,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-standart-rwd"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = "Elektrik",
                 DefaultTransmission = "Otomatik",
                 DefaultBodyType = body,
@@ -357,6 +358,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-long-range-awd"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = "Elektrik",
                 DefaultTransmission = "Otomatik",
                 DefaultBodyType = body,
@@ -374,6 +376,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-v8-biturbo"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = "Benzin",
                 DefaultTransmission = "Otomatik",
                 DefaultBodyType = isSuv ? "SUV" : "Coupe",
@@ -391,6 +394,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-benzin-otomatik"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = "Benzin",
                 DefaultTransmission = "Otomatik",
                 DefaultBodyType = body,
@@ -406,6 +410,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-dizel-manuel"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = "Dizel",
                 DefaultTransmission = "Manuel",
                 DefaultBodyType = body,
@@ -421,6 +426,7 @@ public static class DatabaseSeeder
                 Slug = Slugify($"{brand}-{series}-hibrit-otomatik"),
                 ParentCategoryId = seriesId,
                 IsLeaf = true,
+                IsDeleted = false,
                 DefaultFuelType = (b == "dacia" || b == "fiat" || b == "honda") ? "LPG & Benzin" : "Hibrit",
                 DefaultTransmission = "Otomatik",
                 DefaultBodyType = body,
