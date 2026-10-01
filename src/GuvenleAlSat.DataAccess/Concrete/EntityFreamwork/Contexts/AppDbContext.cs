@@ -4,6 +4,7 @@ using GuvenleAlSat.DataAccess.Entities.Locations;
 using GuvenleAlSat.DataAccess.Entities.Messages;
 using GuvenleAlSat.DataAccess.Entities.Subscriptions;
 using GuvenleAlSat.DataAccess.Entities.Users;
+using GuvenleAlSat.DataAccess.Entities.Vehicles;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     public DbSet<City> Cities => Set<City>();
     public DbSet<District> Districts => Set<District>();
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
-
+    public DbSet<VehicleBrand> VehicleBrands => Set<VehicleBrand>();
+    public DbSet<VehicleSeries> VehicleSeries => Set<VehicleSeries>();
+    public DbSet<VehicleModelTrim> VehicleModelTrims => Set<VehicleModelTrim>();
     public DbSet<RealEstateDetail> RealEstateDetails => Set<RealEstateDetail>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

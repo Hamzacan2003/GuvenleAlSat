@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GuvenleAlSat.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06431aaa8e28c9428f0eeb83cfbb412c5a0aead6")]
 [assembly: System.Reflection.AssemblyProductAttribute("GuvenleAlSat.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GuvenleAlSat.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -778,6 +778,19 @@
           }
         }
       },
+      "Resend/0.22.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Resend.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Resend.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Swashbuckle.AspNetCore/10.2.3": {
         "type": "package",
         "dependencies": {
@@ -994,7 +1007,8 @@
           "AWSSDK.S3": "4.0.103.4",
           "FluentValidation.AspNetCore": "11.3.1",
           "GuvenleAlSat.Core": "1.0.0",
-          "GuvenleAlSat.DataAccess": "1.0.0"
+          "GuvenleAlSat.DataAccess": "1.0.0",
+          "Resend": "0.22.0"
         },
         "compile": {
           "bin/placeholder/GuvenleAlSat.Business.dll": {}
@@ -2959,6 +2973,21 @@
         "npgsql.entityframeworkcore.postgresql.10.0.3.nupkg.sha512",
         "npgsql.entityframeworkcore.postgresql.nuspec",
         "postgresql.png"
+      ]
+    },
+    "Resend/0.22.0": {
+      "sha512": "9dG9A7cprGomcYYbs90WEBDIhWpx/QXKgjHtfIm2ycouGFL282E39sFB1ufuA2femY/SIUccYwgMmdmQEI6gQg==",
+      "type": "package",
+      "path": "resend/0.22.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "icon.png",
+        "lib/net8.0/Resend.dll",
+        "lib/net8.0/Resend.xml",
+        "resend.0.22.0.nupkg.sha512",
+        "resend.nuspec"
       ]
     },
     "Swashbuckle.AspNetCore/10.2.3": {

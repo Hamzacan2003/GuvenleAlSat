@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "k8HrMHONPwE=",
+  "dgSpecHash": "N/RIa7bTb6U=",
   "success": true,
   "projectFilePath": "C:\\Users\\hamzacan.altintop\\Desktop\\ABB-Projeler\\GuvenleAlSat\\src\\GuvenleAlSat.Business\\GuvenleAlSat.Business.csproj",
   "expectedPackageFiles": [
@@ -12,6 +12,7 @@
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.aspnetcore.cryptography.internal\\10.0.12\\microsoft.aspnetcore.cryptography.internal.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.aspnetcore.cryptography.keyderivation\\10.0.12\\microsoft.aspnetcore.cryptography.keyderivation.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.aspnetcore.identity.entityframeworkcore\\10.0.12\\microsoft.aspnetcore.identity.entityframeworkcore.10.0.12.nupkg.sha512",
+    "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.aspnetcore.webutilities\\8.0.20\\microsoft.aspnetcore.webutilities.8.0.20.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.bcl.cryptography\\10.0.2\\microsoft.bcl.cryptography.10.0.2.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.12\\microsoft.entityframeworkcore.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.12\\microsoft.entityframeworkcore.abstractions.10.0.12.nupkg.sha512",
@@ -26,6 +27,7 @@
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.12\\microsoft.extensions.dependencyinjection.abstractions.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.diagnostics\\10.0.12\\microsoft.extensions.diagnostics.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.diagnostics.abstractions\\10.0.12\\microsoft.extensions.diagnostics.abstractions.10.0.12.nupkg.sha512",
+    "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.http\\8.0.0\\microsoft.extensions.http.8.0.0.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.identity.core\\10.0.12\\microsoft.extensions.identity.core.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.identity.stores\\10.0.12\\microsoft.extensions.identity.stores.10.0.12.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.extensions.logging\\10.0.12\\microsoft.extensions.logging.10.0.12.nupkg.sha512",
@@ -37,8 +39,10 @@
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.23.0\\microsoft.identitymodel.jsonwebtokens.8.23.0.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.identitymodel.logging\\8.23.0\\microsoft.identitymodel.logging.8.23.0.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.23.0\\microsoft.identitymodel.tokens.8.23.0.nupkg.sha512",
+    "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\microsoft.net.http.headers\\8.0.20\\microsoft.net.http.headers.8.0.20.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\npgsql\\10.0.3\\npgsql.10.0.3.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.3\\npgsql.entityframeworkcore.postgresql.10.0.3.nupkg.sha512",
+    "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\resend\\0.22.0\\resend.0.22.0.nupkg.sha512",
     "C:\\Users\\hamzacan.altintop\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.23.0\\system.identitymodel.tokens.jwt.8.23.0.nupkg.sha512"
   ],
   "logs": []

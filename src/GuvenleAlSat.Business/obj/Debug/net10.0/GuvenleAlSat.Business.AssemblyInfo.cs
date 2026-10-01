@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GuvenleAlSat.Business")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+17b59947bfc250352448b42e4b424622a0a862c8")]
 [assembly: System.Reflection.AssemblyProductAttribute("GuvenleAlSat.Business")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GuvenleAlSat.Business")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
