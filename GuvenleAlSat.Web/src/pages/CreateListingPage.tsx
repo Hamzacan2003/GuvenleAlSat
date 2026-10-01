@@ -26,7 +26,7 @@ const REAL_ESTATE_HIERARCHY: Record<string, string[]> = {
   'Arsa': ['İmarlı - Konut', 'İmarlı - Ticari', 'Tarla']
 };
 
-const ENGINE_CAPACITY_OPTIONS = [
+const ENGINE_CAPACITIES = [
   { label: '1.0 altı', value: '999' },
   { label: '1.0', value: '1000' },
   { label: '1.2', value: '1200' },
@@ -59,8 +59,7 @@ export const CreateListingPage: React.FC = () => {
 
   const [mainType, setMainType] = useState<'vehicle' | 'realestate'>('vehicle');
 
-  // --- KATEGORİ VE ARAÇ DEV AĞACI (VERİTABANINDAN) ---
-  const [allCategories, setAllCategories] = useState<any[]>([]);
+  // --- KATEGORİ VE ARAÇ LİSTELERİ ---
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
@@ -75,7 +74,7 @@ export const CreateListingPage: React.FC = () => {
   const [realEstateSub, setRealEstateSub] = useState('Konut (Satılık)');
   const [realEstateType, setRealEstateType] = useState('Daire');
 
-  // --- LOKASYON LİSTELERİ ---
+  // Lokasyon
   const [cities, setCities] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
@@ -86,7 +85,7 @@ export const CreateListingPage: React.FC = () => {
   const [selectedDistrictName, setSelectedDistrictName] = useState<string>('');
   const [selectedNeighborhoodName, setSelectedNeighborhoodName] = useState<string>('');
 
-  // --- ARAÇ DETAYLARI (2. ADIM) ---
+  // Araç Özellikleri
   const [year, setYear] = useState('2022');
   const [kilometer, setKilometer] = useState('');
   const [fuelType, setFuelType] = useState('Benzin');
@@ -102,7 +101,7 @@ export const CreateListingPage: React.FC = () => {
     frontLeftDoor: 0, frontRightDoor: 0, rearLeftDoor: 0, rearRightDoor: 0
   });
 
-  // --- EMLAK DETAYLARI ---
+  // Emlak Özellikleri
   const [grossM2, setGrossM2] = useState('');
   const [netM2, setNetM2] = useState('');
   const [roomCount, setRoomCount] = useState('3+1');
@@ -115,14 +114,14 @@ export const CreateListingPage: React.FC = () => {
   const [isFurnished, setIsFurnished] = useState(false);
   const [inSite, setInSite] = useState(false);
 
-  // --- GENEL ALANLAR ---
+  // Genel
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // 1. Sayfa Açıldığında Tüm Şehirleri ve Kategori Kataloğunu Çek
+  // 1. Sayfa Açıldığında 81 İli ve Kök Kategoriden (Vasıta) Araç Türlerini Çek
   useEffect(() => {
     // 81 İli Çek
     api.get('/locations/cities').then((res) => {
@@ -136,107 +135,85 @@ export const CreateListingPage: React.FC = () => {
       }
     });
 
-    // Araç Kataloğunu Çek
-    api.get('/categories/vehicle-catalog').then((res) => {
-      const rawList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      console.log('ARAÇ KATALOĞU ÇEKİLDİ:', rawList.length, 'adet kayıt');
+    // Kök Kategorileri Çek (Vasıta, Emlak)
+    api.get('/Categories/roots').then(async (res) => {
+      const rootList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      const vasita = rootList.find((c: any) => c.slug?.toLowerCase().includes('vasita') || c.name?.toLowerCase().includes('vasıta')) || rootList[0];
 
-      if (Array.isArray(rawList) && rawList.length > 0) {
-        setAllCategories(rawList);
-
-        // Vasıta kökünü tespit et
-        const vasita = rawList.find(
-          (c: any) => c.slug?.toLowerCase().includes('vasita') || c.name?.toLowerCase().includes('vasıta')
-        );
-
-        // Araç Türleri: Otomobil, SUV, Kamyonet/Ticari
-        let vTypes = [];
-        if (vasita) {
-          vTypes = rawList.filter((c: any) => c.parentCategoryId === vasita.id);
-        }
-
-        // Eğer vasita id'siyle bulunamazsa parentCategoryId'si null olup Emlak olmayanları al
-        if (vTypes.length === 0) {
-          vTypes = rawList.filter(
-            (c: any) => !c.parentCategoryId && !c.name?.toLowerCase().includes('emlak') && !c.slug?.toLowerCase().includes('emlak')
-          );
-        }
-
-        // Eğer hâlâ boşsa ismi Otomobil, SUV veya Ticari olanları doğrudan tür yap
-        if (vTypes.length === 0) {
-          vTypes = rawList.filter(
-            (c: any) =>
-              c.name?.toLowerCase().includes('otomobil') ||
-              c.name?.toLowerCase().includes('suv') ||
-              c.name?.toLowerCase().includes('ticari')
-          );
-        }
-
+      if (vasita) {
+        // Vasıta altındaki Araç Türleri (Otomobil, Arazi & SUV, Ticari)
+        const subRes = await api.get(`/Categories/${vasita.id}/subcategories`);
+        const vTypes = Array.isArray(subRes.data) ? subRes.data : (subRes.data?.data || []);
         setVehicleTypes(vTypes);
+
         if (vTypes.length > 0) {
           const firstType = vTypes[0];
           setSelectedVehicleTypeId(firstType.id);
-          buildBrands(firstType.id, rawList);
+          loadBrands(firstType.id);
         }
       }
     }).catch((err) => {
-      console.error('vehicle-catalog çağrı hatası:', err);
+      console.error('Kategori roots hatası:', err);
     });
   }, []);
 
-  // Araç Türü Değişince Markaları Kur (40+ Marka)
-  const buildBrands = (typeId: string, sourceCats = allCategories) => {
-    let bList = sourceCats
-      .filter((c: any) => c.parentCategoryId === typeId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
-
-    // Eğer doğrudan eşleşme yoksa (kategori kök seviyesine göre), markaları bul
-    if (bList.length === 0) {
-      bList = sourceCats.filter((c: any) => !c.isLeaf && c.parentCategoryId !== null);
-    }
-
-    setBrands(bList);
-    if (bList.length > 0) {
-      const firstB = bList[0];
-      setSelectedBrandId(firstB.id);
-      buildModels(firstB.id, sourceCats);
-    } else {
-      setModels([]);
-      setPackages([]);
+  // Araç Türü Değişince Markaları Çek (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...)
+  const loadBrands = async (vehicleTypeId: string) => {
+    setBrands([]);
+    setModels([]);
+    setPackages([]);
+    try {
+      const res = await api.get(`/Categories/${vehicleTypeId}/subcategories`);
+      const bList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setBrands(bList);
+      if (bList.length > 0) {
+        const firstB = bList[0];
+        setSelectedBrandId(firstB.id);
+        loadModels(firstB.id);
+      }
+    } catch (e) {
+      console.error('Marka yükleme hatası:', e);
     }
   };
 
-  // Marka Değişince Modelleri Kur
-  const buildModels = (brandId: string, sourceCats = allCategories) => {
-    const mList = sourceCats
-      .filter((c: any) => c.parentCategoryId === brandId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
-
-    setModels(mList);
-    if (mList.length > 0) {
-      const firstM = mList[0];
-      setSelectedModelId(firstM.id);
-      buildPackages(firstM.id, sourceCats);
-    } else {
-      setPackages([]);
+  // Marka Değişince Modelleri Çek (A3, Clio, Egea, Şahin...)
+  const loadModels = async (brandId: string) => {
+    setModels([]);
+    setPackages([]);
+    try {
+      const res = await api.get(`/Categories/${brandId}/subcategories`);
+      const mList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setModels(mList);
+      if (mList.length > 0) {
+        const firstM = mList[0];
+        setSelectedModelId(firstM.id);
+        loadPackages(firstM.id);
+      } else {
+        setDbCategoryId(brandId);
+      }
+    } catch (e) {
+      console.error('Model yükleme hatası:', e);
     }
   };
 
-  // Model Değişince Donanım Paketlerini Kur
-  const buildPackages = (modelId: string, sourceCats = allCategories) => {
-    const pList = sourceCats
-      .filter((c: any) => c.parentCategoryId === modelId)
-      .sort((a: any, b: any) => a.name.localeCompare(b.name, 'tr'));
-
-    setPackages(pList);
-    if (pList.length > 0) {
-      const firstP = pList[0];
-      setSelectedPackageId(firstP.id);
-      setDbCategoryId(firstP.id);
-      syncVehicleDefaults(firstP);
-    } else {
-      setSelectedPackageId('');
-      setDbCategoryId(modelId);
+  // Model Değişince Paketleri Çek
+  const loadPackages = async (modelId: string) => {
+    setPackages([]);
+    try {
+      const res = await api.get(`/Categories/${modelId}/subcategories`);
+      const pList = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setPackages(pList);
+      if (pList.length > 0) {
+        const firstP = pList[0];
+        setSelectedPackageId(firstP.id);
+        setDbCategoryId(firstP.id);
+        syncVehicleDefaults(firstP);
+      } else {
+        setSelectedPackageId('');
+        setDbCategoryId(modelId);
+      }
+    } catch (e) {
+      console.error('Paket yükleme hatası:', e);
     }
   };
 
@@ -321,7 +298,7 @@ export const CreateListingPage: React.FC = () => {
         displayOrder: idx + 1
       }));
 
-      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedModelId || '11111111-1111-1111-1111-111111111111';
+      const categoryIdToSend = dbCategoryId || selectedPackageId || selectedModelId || selectedBrandId || '11111111-1111-1111-1111-111111111111';
 
       const payload: any = {
         categoryId: categoryIdToSend,
@@ -436,7 +413,7 @@ export const CreateListingPage: React.FC = () => {
                       value={selectedVehicleTypeId}
                       onChange={(e) => {
                         setSelectedVehicleTypeId(e.target.value);
-                        buildBrands(e.target.value);
+                        loadBrands(e.target.value);
                       }}
                     >
                       {vehicleTypes.map((t) => (
@@ -445,7 +422,7 @@ export const CreateListingPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Marka (Audi, BMW, Mercedes, Renault, Fiat, Tofaş...) */}
+                  {/* Marka (Audi, BMW, Fiat, Mercedes, Renault, Tofaş...) */}
                   <div>
                     <label className="block font-bold text-gray-700 mb-1">Marka</label>
                     <select
@@ -453,7 +430,7 @@ export const CreateListingPage: React.FC = () => {
                       value={selectedBrandId}
                       onChange={(e) => {
                         setSelectedBrandId(e.target.value);
-                        buildModels(e.target.value);
+                        loadModels(e.target.value);
                       }}
                     >
                       {brands.map((b) => (
@@ -470,7 +447,7 @@ export const CreateListingPage: React.FC = () => {
                       value={selectedModelId}
                       onChange={(e) => {
                         setSelectedModelId(e.target.value);
-                        buildPackages(e.target.value);
+                        loadPackages(e.target.value);
                       }}
                     >
                       {models.map((m) => (
